@@ -142,6 +142,8 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": r"/api/v[0-9]",
     "ENUM_NAME_OVERRIDES": {
         "ContactVisibilityEnum": "apps.profiles.models.ContactVisibility",
+        "ActivityStatusEnum": "apps.activities.models.ActivityStatus",
+        "ActivityTypeEnum": "apps.activities.models.ActivityType",
     },
 }
 
