@@ -10,9 +10,16 @@ export const useAuthStore = defineStore('auth', {
     accessToken: localStorage.getItem(ACCESS_TOKEN_KEY) ?? '',
     refreshToken: localStorage.getItem(REFRESH_TOKEN_KEY) ?? '',
     currentUser: null as CurrentUser | null,
+    userLoaded: false,
   }),
   getters: {
     isAuthenticated: (state) => Boolean(state.accessToken),
+    reviewStatus: (state) => state.currentUser?.review_status ?? null,
+    accountStatus: (state) => state.currentUser?.account_status ?? null,
+    isReviewApproved: (state) => state.currentUser?.review_status === 'approved',
+    isAccountNormal: (state) => state.currentUser?.account_status === 'normal',
+    isAccountBanned: (state) => state.currentUser?.account_status === 'banned',
+    isAccountRestricted: (state) => state.currentUser?.account_status === 'restricted',
   },
   actions: {
     async login(email: string, password: string) {
@@ -24,12 +31,21 @@ export const useAuthStore = defineStore('auth', {
       await this.loadCurrentUser()
     },
     async loadCurrentUser() {
-      this.currentUser = await fetchCurrentUser()
+      try {
+        this.currentUser = await fetchCurrentUser()
+        this.userLoaded = true
+      } catch {
+        this.clearAuth()
+      }
     },
     logout() {
+      this.clearAuth()
+    },
+    clearAuth() {
       this.accessToken = ''
       this.refreshToken = ''
       this.currentUser = null
+      this.userLoaded = false
       localStorage.removeItem(ACCESS_TOKEN_KEY)
       localStorage.removeItem(REFRESH_TOKEN_KEY)
     },

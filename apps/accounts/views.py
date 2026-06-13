@@ -8,6 +8,8 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.common.permissions import IsSuperAdmin
+
 from .models import ReviewStatus
 from .serializers import (
     AdminUserListSerializer,
@@ -54,7 +56,7 @@ class CurrentUserView(APIView):
 class PendingAccountListView(generics.ListAPIView):
     """List accounts that still need admin review attention."""
 
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsSuperAdmin]
     serializer_class = AdminUserListSerializer
 
     def get_queryset(self):
@@ -70,7 +72,7 @@ class PendingAccountListView(generics.ListAPIView):
 class AdminReviewAccountView(APIView):
     """Apply an admin review decision to a user account."""
 
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsSuperAdmin]
 
     @extend_schema(request=ReviewActionSerializer, responses=AdminUserListSerializer, tags=["admin-accounts"])
     def post(self, request, account_id):
