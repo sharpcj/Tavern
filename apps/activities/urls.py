@@ -2,6 +2,7 @@
 
 from django.urls import path
 
+from .admin_views import AdminActivityDeleteView, AdminActivityListView, AdminActivityStatusUpdateView
 from .views import (
     ActivityDeleteView,
     ActivityDetailView,
@@ -22,4 +23,7 @@ urlpatterns = [
     path("activities/<int:pk>/signup/", SignupView.as_view(), name="activity-signup"),
     path("activities/<int:pk>/vote/", VoteView.as_view(), name="activity-vote"),
     path("activities/<int:pk>/chain/", ChainView.as_view(), name="activity-chain"),
+    path("admin/activities/", AdminActivityListView.as_view(), name="admin-activity-list"),
+    path("admin/activities/<int:pk>/update-status/", AdminActivityStatusUpdateView.as_view(), name="admin-activity-status-update"),
+    path("admin/activities/<int:pk>/delete/", AdminActivityDeleteView.as_view(), name="admin-activity-delete"),
 ]

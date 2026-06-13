@@ -7,7 +7,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import ReviewStatus
+from .models import AccountStatus, ReviewStatus, UserRole
 
 User = get_user_model()
 
@@ -141,3 +141,24 @@ class ReviewActionSerializer(serializers.Serializer):
         user.reviewed_at = timezone.now()
         user.save(update_fields=["review_status", "review_note", "review_message", "reviewed_by", "reviewed_at", "updated_at"])
         return user
+
+
+class AdminUserDetailSerializer(serializers.ModelSerializer):
+    review_status_display = serializers.CharField(source="get_review_status_display", read_only=True)
+    account_status_display = serializers.CharField(source="get_account_status_display", read_only=True)
+    role_display = serializers.CharField(source="get_role_display", read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "id", "account_id", "email", "real_name", "high_school", "high_school_class",
+            "nickname", "role", "role_display", "review_status", "review_status_display",
+            "account_status", "account_status_display", "review_note", "review_message",
+            "reviewed_by", "reviewed_at", "date_joined",
+        ]
+        read_only_fields = fields
+
+
+class AdminUserUpdateSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=UserRole.choices, required=False)
+    account_status = serializers.ChoiceField(choices=AccountStatus.choices, required=False)
