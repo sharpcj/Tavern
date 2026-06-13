@@ -5,6 +5,7 @@ from __future__ import annotations
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework import serializers
 from rest_framework.views import APIView
 
 from apps.albums.models import Album, Photo
@@ -16,8 +17,26 @@ from apps.common.permissions import IsModeratorOrAbove
 from apps.posts.models import Post
 
 
+class AdminContentItemSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    author_name = serializers.CharField(required=False)
+    uploader_name = serializers.CharField(required=False)
+    creator_name = serializers.CharField(required=False)
+    content = serializers.CharField(required=False)
+    caption = serializers.CharField(required=False)
+    title = serializers.CharField(required=False)
+    album_title = serializers.CharField(required=False)
+    status = serializers.CharField()
+    created_at = serializers.DateTimeField()
+
+
+class AdminActionResponseSerializer(serializers.Serializer):
+    detail = serializers.CharField()
+
+
 class AdminPostListView(generics.ListAPIView):
     permission_classes = [IsModeratorOrAbove]
+    serializer_class = AdminContentItemSerializer
 
     def get_queryset(self):
         qs = Post.objects.select_related("author").all().order_by("-created_at")
@@ -39,6 +58,7 @@ class AdminPostListView(generics.ListAPIView):
 
 class AdminPostHideView(APIView):
     permission_classes = [IsModeratorOrAbove]
+    serializer_class = AdminActionResponseSerializer
 
     @extend_schema(tags=["admin-contents"])
     def post(self, request, pk: int):
@@ -51,6 +71,7 @@ class AdminPostHideView(APIView):
 
 class AdminPostDeleteView(APIView):
     permission_classes = [IsModeratorOrAbove]
+    serializer_class = AdminActionResponseSerializer
 
     @extend_schema(tags=["admin-contents"])
     def post(self, request, pk: int):
@@ -62,6 +83,7 @@ class AdminPostDeleteView(APIView):
 
 class AdminCommentListView(generics.ListAPIView):
     permission_classes = [IsModeratorOrAbove]
+    serializer_class = AdminContentItemSerializer
 
     def get_queryset(self):
         return Comment.objects.select_related("author").all().order_by("-created_at")
@@ -79,6 +101,7 @@ class AdminCommentListView(generics.ListAPIView):
 
 class AdminCommentHideView(APIView):
     permission_classes = [IsModeratorOrAbove]
+    serializer_class = AdminActionResponseSerializer
 
     @extend_schema(tags=["admin-contents"])
     def post(self, request, pk: int):
@@ -91,6 +114,7 @@ class AdminCommentHideView(APIView):
 
 class AdminCommentDeleteView(APIView):
     permission_classes = [IsModeratorOrAbove]
+    serializer_class = AdminActionResponseSerializer
 
     @extend_schema(tags=["admin-contents"])
     def post(self, request, pk: int):
@@ -102,6 +126,7 @@ class AdminCommentDeleteView(APIView):
 
 class AdminPhotoListView(generics.ListAPIView):
     permission_classes = [IsModeratorOrAbove]
+    serializer_class = AdminContentItemSerializer
 
     def get_queryset(self):
         return Photo.objects.select_related("uploader", "album").all().order_by("-created_at")
@@ -119,6 +144,7 @@ class AdminPhotoListView(generics.ListAPIView):
 
 class AdminPhotoHideView(APIView):
     permission_classes = [IsModeratorOrAbove]
+    serializer_class = AdminActionResponseSerializer
 
     @extend_schema(tags=["admin-contents"])
     def post(self, request, pk: int):
@@ -131,6 +157,7 @@ class AdminPhotoHideView(APIView):
 
 class AdminAlbumListView(generics.ListAPIView):
     permission_classes = [IsModeratorOrAbove]
+    serializer_class = AdminContentItemSerializer
 
     def get_queryset(self):
         return Album.objects.select_related("creator").all().order_by("-created_at")
@@ -148,6 +175,7 @@ class AdminAlbumListView(generics.ListAPIView):
 
 class AdminAlbumHideView(APIView):
     permission_classes = [IsModeratorOrAbove]
+    serializer_class = AdminActionResponseSerializer
 
     @extend_schema(tags=["admin-contents"])
     def post(self, request, pk: int):

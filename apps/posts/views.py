@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from apps.common.permissions import IsApprovedClassmate, IsSuperAdmin
 from apps.comments.models import Comment
 from apps.common.enums import ContentStatus
+from apps.notifications.services import NotificationType, create_notification
 
 from .models import Post
 from .serializers import (
@@ -163,6 +164,14 @@ class CommentReplyView(APIView):
         serializer = CommentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         reply = serializer.save(author=request.user, post=parent.post, parent=parent)
+        if parent.author != request.user:
+            create_notification(
+                recipient=parent.author,
+                notification_type=NotificationType.COMMENT_REPLY,
+                title="你的评论收到了回复",
+                content=reply.content[:200],
+                target=reply,
+            )
         return Response(CommentSerializer(reply).data, status=status.HTTP_201_CREATED)
 
 

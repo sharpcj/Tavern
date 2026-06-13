@@ -4,18 +4,34 @@ from __future__ import annotations
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
+from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.audit_logs.models import AuditAction
 from apps.audit_logs.services import write_audit_log
 from apps.common.permissions import IsModeratorOrAbove, IsSuperAdmin
+from apps.notifications.services import NotificationType, create_notification
 
 from .models import Activity, ActivityStatus
 
 
+class AdminActivityItemSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+    activity_type = serializers.CharField()
+    initiator_name = serializers.CharField()
+    status = serializers.CharField()
+    created_at = serializers.DateTimeField()
+
+
+class AdminActivityActionResponseSerializer(serializers.Serializer):
+    detail = serializers.CharField()
+
+
 class AdminActivityListView(generics.ListAPIView):
     permission_classes = [IsModeratorOrAbove]
+    serializer_class = AdminActivityItemSerializer
 
     def get_queryset(self):
         qs = Activity.objects.select_related("initiator").all().order_by("-created_at")
@@ -37,6 +53,7 @@ class AdminActivityListView(generics.ListAPIView):
 
 class AdminActivityStatusUpdateView(APIView):
     permission_classes = [IsModeratorOrAbove]
+    serializer_class = AdminActivityActionResponseSerializer
 
     @extend_schema(tags=["admin-activities"])
     def post(self, request, pk: int):
@@ -54,11 +71,19 @@ class AdminActivityStatusUpdateView(APIView):
             reason=f"活动状态变更: {old_status} → {new_status}",
             metadata={"old_status": old_status, "new_status": new_status},
         )
+        create_notification(
+            recipient=activity.initiator,
+            notification_type=NotificationType.ACTIVITY_STATUS,
+            title="活动状态已更新",
+            content=f"活动「{activity.title}」状态已从 {old_status} 更新为 {new_status}。",
+            target=activity,
+        )
         return Response({"detail": "状态已更新"})
 
 
 class AdminActivityDeleteView(APIView):
     permission_classes = [IsSuperAdmin]
+    serializer_class = AdminActivityActionResponseSerializer
 
     @extend_schema(tags=["admin-activities"])
     def post(self, request, pk: int):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -13,9 +14,13 @@ from apps.common.enums import ContentStatus
 from apps.common.permissions import IsApprovedClassmate, IsModeratorOrAbove
 from apps.audit_logs.models import AuditAction
 from apps.audit_logs.services import write_audit_log
+from apps.accounts.models import AccountStatus, ReviewStatus
+from apps.notifications.services import NotificationType, create_notifications
 
 from .models import Announcement, AnnouncementReadReceipt
 from .serializers import AnnouncementDetailSerializer, AnnouncementListSerializer, AnnouncementWriteSerializer
+
+User = get_user_model()
 
 
 def active_announcements_queryset():
@@ -53,6 +58,15 @@ class AnnouncementListCreateView(generics.ListCreateAPIView):
         write_serializer.is_valid(raise_exception=True)
         announcement = write_serializer.save()
         write_audit_log(actor=request.user, action=AuditAction.ANNOUNCEMENT_CREATED, target=announcement, reason=announcement.title)
+        if announcement.require_read_confirm:
+            recipients = User.objects.filter(review_status=ReviewStatus.APPROVED).exclude(account_status=AccountStatus.BANNED)
+            create_notifications(
+                recipients=recipients,
+                notification_type=NotificationType.ANNOUNCEMENT,
+                title=f"重要公告：{announcement.title}",
+                content=announcement.content[:200],
+                target=announcement,
+            )
         return Response(
             AnnouncementDetailSerializer(announcement, context={"request": request}).data,
             status=status.HTTP_201_CREATED,

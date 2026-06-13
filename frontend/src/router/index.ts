@@ -19,6 +19,7 @@ import AlbumCreatePage from '@/pages/AlbumCreatePage.vue'
 import AlbumDetailPage from '@/pages/AlbumDetailPage.vue'
 import PhotoDetailPage from '@/pages/PhotoDetailPage.vue'
 import BirthdayPage from '@/pages/BirthdayPage.vue'
+import NotificationsPage from '@/pages/NotificationsPage.vue'
 import AdminActivitiesPage from '@/pages/AdminActivitiesPage.vue'
 import AdminAuditLogsPage from '@/pages/AdminAuditLogsPage.vue'
 import AdminContentsPage from '@/pages/AdminContentsPage.vue'
@@ -67,6 +68,7 @@ const router = createRouter({
         { path: 'albums/:id', name: 'album-detail', component: AlbumDetailPage, meta: { requiresAuth: true, requiresApproved: true } },
         { path: 'photos/:id', name: 'photo-detail', component: PhotoDetailPage, meta: { requiresAuth: true, requiresApproved: true } },
         { path: 'birthdays', name: 'birthdays', component: BirthdayPage, meta: { requiresAuth: true, requiresApproved: true } },
+        { path: 'notifications', name: 'notifications', component: NotificationsPage, meta: { requiresAuth: true, requiresApproved: true } },
       ],
     },
     {

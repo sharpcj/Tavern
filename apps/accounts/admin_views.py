@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from apps.audit_logs.models import AuditAction
 from apps.audit_logs.services import write_audit_log
 from apps.common.permissions import IsModeratorOrAbove, IsSuperAdmin
+from apps.notifications.services import NotificationType, create_notification
 
 from .models import AccountStatus, ReviewStatus, UserRole
 from .serializers import AdminUserDetailSerializer, AdminUserListSerializer, AdminUserUpdateSerializer, ReviewActionSerializer
@@ -125,6 +126,13 @@ class AdminReviewActionView(APIView):
             target=user,
             reason=f"审核操作: {action} - {reason}",
             metadata={"action": action},
+        )
+        create_notification(
+            recipient=user,
+            notification_type=NotificationType.REVIEW_RESULT,
+            title="账号审核结果已更新",
+            content=f"你的账号审核状态已更新为：{user.get_review_status_display()}。{reason}".strip(),
+            target=user,
         )
 
         return Response(AdminUserListSerializer(user).data)
