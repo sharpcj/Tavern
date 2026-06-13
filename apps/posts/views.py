@@ -9,9 +9,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.common.permissions import IsApprovedClassmate, IsSuperAdmin
-from apps.comments.models import Comment, CommentStatus
+from apps.comments.models import Comment
+from apps.common.enums import ContentStatus
 
-from .models import Post, PostStatus
+from .models import Post
 from .serializers import (
     CommentCreateSerializer,
     CommentSerializer,
@@ -33,7 +34,7 @@ class PostListView(generics.ListCreateAPIView):
         return PostListSerializer
 
     def get_queryset(self):
-        qs = Post.objects.filter(status=PostStatus.PUBLISHED).select_related("author")
+        qs = Post.objects.filter(status=ContentStatus.PUBLISHED).select_related("author")
         category = self.request.query_params.get("category", "").strip()
         if category:
             qs = qs.filter(category=category)
@@ -64,7 +65,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsApprovedClassmate]
 
     def get_queryset(self):
-        return Post.objects.filter(status=PostStatus.PUBLISHED).select_related("author")
+        return Post.objects.filter(status=ContentStatus.PUBLISHED).select_related("author")
 
     def get_serializer_class(self):
         if self.request.method in ("PATCH", "PUT"):
@@ -78,10 +79,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
                 self.permission_denied(request, message="只能编辑或删除自己的动态")
 
     def perform_destroy(self, instance):
-        instance.status = PostStatus.DELETED
-        instance.deleted_at = timezone.now()
-        instance.deleted_by = self.request.user
-        instance.save(update_fields=["status", "deleted_at", "deleted_by", "updated_at"])
+        instance.soft_delete(self.request.user)
 
     @extend_schema(responses=PostDetailSerializer, tags=["posts"])
     def get(self, request, *args, **kwargs):
@@ -103,7 +101,7 @@ class PostPinView(APIView):
 
     @extend_schema(request=PinToggleSerializer, responses=PostDetailSerializer, tags=["posts"])
     def post(self, request, pk: int):
-        post = generics.get_object_or_404(Post.objects.filter(status=PostStatus.PUBLISHED), pk=pk)
+        post = generics.get_object_or_404(Post.objects.filter(status=ContentStatus.PUBLISHED), pk=pk)
         serializer = PinToggleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         if serializer.validated_data["pin"]:
@@ -133,13 +131,13 @@ class CommentListView(generics.ListCreateAPIView):
         if post_id is None:
             return Comment.objects.none()
         return (
-            Comment.objects.filter(post_id=post_id, parent__isnull=True, status=CommentStatus.PUBLISHED)
+            Comment.objects.filter(post_id=post_id, parent__isnull=True, status=ContentStatus.PUBLISHED)
             .select_related("author")
             .prefetch_related("replies__author")
         )
 
     def perform_create(self, serializer):
-        post = generics.get_object_or_404(Post.objects.filter(status=PostStatus.PUBLISHED), pk=self.kwargs["post_pk"])
+        post = generics.get_object_or_404(Post.objects.filter(status=ContentStatus.PUBLISHED), pk=self.kwargs["post_pk"])
         serializer.save(author=self.request.user, post=post)
 
     @extend_schema(tags=["comments"])
@@ -159,7 +157,7 @@ class CommentReplyView(APIView):
     @extend_schema(request=CommentCreateSerializer, responses=CommentSerializer, tags=["comments"])
     def post(self, request, pk: int):
         parent = generics.get_object_or_404(
-            Comment.objects.filter(status=CommentStatus.PUBLISHED, parent__isnull=True),
+            Comment.objects.filter(status=ContentStatus.PUBLISHED, parent__isnull=True),
             pk=pk,
         )
         serializer = CommentCreateSerializer(data=request.data)
@@ -176,10 +174,8 @@ class CommentDeleteView(APIView):
 
     @extend_schema(tags=["comments"])
     def delete(self, request, pk: int):
-        comment = generics.get_object_or_404(Comment.objects.filter(status=CommentStatus.PUBLISHED), pk=pk)
+        comment = generics.get_object_or_404(Comment.objects.filter(status=ContentStatus.PUBLISHED), pk=pk)
         if comment.author != request.user:
             self.permission_denied(request, message="只能删除自己的评论")
-        comment.status = CommentStatus.DELETED
-        comment.deleted_at = timezone.now()
-        comment.save(update_fields=["status", "deleted_at", "updated_at"])
+        comment.soft_delete(request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)

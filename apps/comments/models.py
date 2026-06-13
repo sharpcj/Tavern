@@ -5,15 +5,11 @@ from __future__ import annotations
 from django.conf import settings
 from django.db import models
 
-from apps.posts.models import DisplayMode
+from apps.common.enums import ContentStatus, DisplayMode
+from apps.common.models import SoftDeletableModel
 
 
-class CommentStatus(models.TextChoices):
-    PUBLISHED = "published", "已发布"
-    DELETED = "deleted", "已删除"
-
-
-class Comment(models.Model):
+class Comment(SoftDeletableModel):
     """A comment on a post, or a reply to a comment (two-level only)."""
 
     post = models.ForeignKey(
@@ -43,8 +39,7 @@ class Comment(models.Model):
         choices=DisplayMode.choices,
         default=DisplayMode.REAL_NAME,
     )
-    status = models.CharField("状态", max_length=16, choices=CommentStatus.choices, default=CommentStatus.PUBLISHED, db_index=True)
-    deleted_at = models.DateTimeField("删除时间", null=True, blank=True)
+    status = models.CharField("状态", max_length=16, choices=ContentStatus.choices, default=ContentStatus.PUBLISHED, db_index=True)
     created_at = models.DateTimeField("创建时间", auto_now_add=True)
     updated_at = models.DateTimeField("更新时间", auto_now=True)
 

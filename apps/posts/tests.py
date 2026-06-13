@@ -8,8 +8,9 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.accounts.models import ReviewStatus
-from apps.posts.models import Post, PostStatus
-from apps.comments.models import Comment, CommentStatus
+from apps.posts.models import Post
+from apps.comments.models import Comment
+from apps.common.enums import ContentStatus
 
 User = get_user_model()
 
@@ -54,7 +55,7 @@ class PostTests(APITestCase):
 
     def test_post_list_excludes_deleted(self):
         post = Post.objects.create(author=self.user, content="已删除", category="chat")
-        post.status = PostStatus.DELETED
+        post.status = ContentStatus.DELETED
         post.save()
         self.client.force_authenticate(self.user)
         resp = self.client.get(reverse("post-list"))
@@ -88,7 +89,7 @@ class PostTests(APITestCase):
         resp = self.client.delete(reverse("post-detail", kwargs={"pk": post.pk}))
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
         post.refresh_from_db()
-        self.assertEqual(post.status, PostStatus.DELETED)
+        self.assertEqual(post.status, ContentStatus.DELETED)
 
     def test_admin_can_pin_post(self):
         post = Post.objects.create(author=self.user, content="重要通知", category="chat")
@@ -179,7 +180,7 @@ class CommentTests(APITestCase):
         resp = self.client.delete(reverse("comment-delete", kwargs={"pk": comment.pk}))
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
         comment.refresh_from_db()
-        self.assertEqual(comment.status, CommentStatus.DELETED)
+        self.assertEqual(comment.status, ContentStatus.DELETED)
 
     def test_cannot_delete_others_comment(self):
         comment = Comment.objects.create(

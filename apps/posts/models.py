@@ -5,6 +5,9 @@ from __future__ import annotations
 from django.conf import settings
 from django.db import models
 
+from apps.common.enums import ContentStatus, DisplayMode
+from apps.common.models import SoftDeletableModel
+
 
 class PostCategory(models.TextChoices):
     LIFE = "life", "生活近况"
@@ -17,17 +20,7 @@ class PostCategory(models.TextChoices):
     CHAT = "chat", "闲聊"
 
 
-class DisplayMode(models.TextChoices):
-    REAL_NAME = "real_name", "真实姓名"
-    NICKNAME = "nickname", "昵称"
-
-
-class PostStatus(models.TextChoices):
-    PUBLISHED = "published", "已发布"
-    DELETED = "deleted", "已删除"
-
-
-class Post(models.Model):
+class Post(SoftDeletableModel):
     """A feed post in the classmate community."""
 
     author = models.ForeignKey(
@@ -45,7 +38,7 @@ class Post(models.Model):
         choices=DisplayMode.choices,
         default=DisplayMode.REAL_NAME,
     )
-    status = models.CharField("状态", max_length=16, choices=PostStatus.choices, default=PostStatus.PUBLISHED, db_index=True)
+    status = models.CharField("状态", max_length=16, choices=ContentStatus.choices, default=ContentStatus.PUBLISHED, db_index=True)
     is_pinned = models.BooleanField("置顶", default=False, db_index=True)
     pinned_at = models.DateTimeField("置顶时间", null=True, blank=True)
     pinned_by = models.ForeignKey(
@@ -55,15 +48,6 @@ class Post(models.Model):
         blank=True,
         related_name="pinned_posts",
         verbose_name="置顶操作人",
-    )
-    deleted_at = models.DateTimeField("删除时间", null=True, blank=True)
-    deleted_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="deleted_posts",
-        verbose_name="删除操作人",
     )
     created_at = models.DateTimeField("创建时间", auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField("更新时间", auto_now=True)

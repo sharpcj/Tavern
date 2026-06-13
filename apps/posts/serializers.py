@@ -6,8 +6,9 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import serializers
 
-from apps.posts.models import Post, PostStatus
-from apps.comments.models import Comment, CommentStatus
+from apps.posts.models import Post
+from apps.comments.models import Comment
+from apps.common.enums import ContentStatus
 
 User = get_user_model()
 
@@ -36,7 +37,7 @@ class PostListSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_comment_count(self, obj: Post) -> int:
-        return obj.comments.filter(status=CommentStatus.PUBLISHED).count()
+        return obj.comments.filter(status=ContentStatus.PUBLISHED).count()
 
 
 class PostDetailSerializer(serializers.ModelSerializer):
@@ -108,7 +109,7 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_replies(self, obj: Comment) -> list:
         if obj.parent is not None:
             return []
-        replies_qs = obj.replies.filter(status=CommentStatus.PUBLISHED).select_related("author")
+        replies_qs = obj.replies.filter(status=ContentStatus.PUBLISHED).select_related("author")
         return CommentReplySerializer(replies_qs, many=True).data
 
 
