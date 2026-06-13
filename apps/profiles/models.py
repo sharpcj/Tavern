@@ -30,6 +30,7 @@ class Profile(models.Model):
     occupation = models.CharField("职业或行业", max_length=128, blank=True)
     bio = models.TextField("个人简介", blank=True)
     birthday_month = models.PositiveSmallIntegerField("生日月份", null=True, blank=True)
+    show_birthday = models.BooleanField("在生日板块展示生日月份", default=False)
 
     # --- contact fields ---
     phone = models.CharField("手机号", max_length=32, blank=True)

@@ -17,6 +17,7 @@ import AlbumListPage from '@/pages/AlbumListPage.vue'
 import AlbumCreatePage from '@/pages/AlbumCreatePage.vue'
 import AlbumDetailPage from '@/pages/AlbumDetailPage.vue'
 import PhotoDetailPage from '@/pages/PhotoDetailPage.vue'
+import BirthdayPage from '@/pages/BirthdayPage.vue'
 import PostListPage from '@/pages/PostListPage.vue'
 import ProfileEditPage from '@/pages/ProfileEditPage.vue'
 import RegisterPage from '@/pages/RegisterPage.vue'
@@ -150,6 +151,12 @@ const router = createRouter({
           path: 'photos/:id',
           name: 'photo-detail',
           component: PhotoDetailPage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
+        {
+          path: 'birthdays',
+          name: 'birthdays',
+          component: BirthdayPage,
           meta: { requiresAuth: true, requiresApproved: true },
         },
       ],

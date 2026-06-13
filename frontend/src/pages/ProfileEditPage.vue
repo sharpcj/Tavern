@@ -29,6 +29,10 @@
           <el-option v-for="m in 12" :key="m" :label="`${m} 月`" :value="m" />
         </el-select>
       </el-form-item>
+      <el-form-item label="生日板块展示">
+        <el-switch v-model="form.show_birthday" active-text="展示生日月份" inactive-text="不展示" />
+        <div class="field-tip">开启后，你只会在对应月份出现在“本月生日同学”列表中，系统不会展示年份和具体日期。</div>
+      </el-form-item>
 
       <h2>联系方式</h2>
       <el-alert class="form-tip" title="联系方式默认仅自己可见。选择「所有人可见」后，所有审核通过的同学都能看到。选择「指定同学可见」后，只有你选择的同学能看到。" type="info" :closable="false" show-icon />
@@ -111,6 +115,7 @@ const form = reactive<ProfileData>({
   occupation: '',
   bio: '',
   birthday_month: null,
+  show_birthday: false,
   phone: '',
   phone_visibility: 'only_me',
   wechat: '',
@@ -150,6 +155,7 @@ async function submit() {
       occupation: form.occupation,
       bio: form.bio,
       birthday_month: form.birthday_month,
+      show_birthday: form.show_birthday,
       phone: form.phone,
       phone_visibility: form.phone_visibility,
       wechat: form.wechat,
@@ -177,3 +183,7 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.field-tip { margin-top: 6px; color: #6b7280; font-size: 13px; }
+</style>

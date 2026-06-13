@@ -9,6 +9,7 @@ export interface ProfileData {
   occupation: string
   bio: string
   birthday_month: number | null
+  show_birthday: boolean
   phone: string
   phone_visibility: 'everyone' | 'selected' | 'only_me'
   wechat: string

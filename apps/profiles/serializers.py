@@ -28,6 +28,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "occupation",
             "bio",
             "birthday_month",
+            "show_birthday",
             "phone",
             "phone_visibility",
             "wechat",
