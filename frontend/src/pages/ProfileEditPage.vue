@@ -6,6 +6,17 @@
     <el-skeleton v-if="loading" :rows="8" animated />
     <el-form v-else ref="formRef" :model="form" label-position="top" @submit.prevent="submit">
       <h2>公开资料</h2>
+
+      <el-form-item label="真实姓名">
+        <el-input :model-value="form.real_name" disabled />
+        <div class="field-tip">真实姓名用于身份审核和活动实名，注册后不可修改。如需更正请联系管理员。</div>
+      </el-form-item>
+
+      <el-form-item label="昵称" prop="nickname">
+        <el-input v-model="form.nickname" placeholder="同学之间怎么称呼你" />
+        <div class="field-tip">发动态、评论时默认显示的名称，可随时修改。</div>
+      </el-form-item>
+
       <el-form-item label="头像链接">
         <el-input v-model="form.avatar_url" placeholder="https://example.com/avatar.jpg" />
       </el-form-item>
@@ -31,7 +42,7 @@
       </el-form-item>
       <el-form-item label="生日板块展示">
         <el-switch v-model="form.show_birthday" active-text="展示生日月份" inactive-text="不展示" />
-        <div class="field-tip">开启后，你只会在对应月份出现在“本月生日同学”列表中，系统不会展示年份和具体日期。</div>
+        <div class="field-tip">开启后，你只会在对应月份出现在"本月生日同学"列表中，系统不会展示年份和具体日期。</div>
       </el-form-item>
 
       <h2>联系方式</h2>
@@ -150,6 +161,7 @@ async function submit() {
   submitting.value = true
   try {
     const payload: Partial<ProfileData> = {
+      nickname: form.nickname,
       avatar_url: form.avatar_url,
       city: form.city,
       occupation: form.occupation,

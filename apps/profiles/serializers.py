@@ -14,7 +14,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     """Full profile for the owner to view and edit."""
 
     real_name = serializers.CharField(source="user.real_name", read_only=True)
-    nickname = serializers.CharField(source="user.nickname", read_only=True)
+    nickname = serializers.CharField(source="user.nickname")
     email = serializers.EmailField(source="user.email", read_only=True)
 
     class Meta:
@@ -38,7 +38,14 @@ class ProfileSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["real_name", "nickname", "email", "created_at", "updated_at"]
+        read_only_fields = ["real_name", "email", "created_at", "updated_at"]
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop("user", {})
+        if "nickname" in user_data:
+            instance.user.nickname = user_data["nickname"]
+            instance.user.save(update_fields=["nickname", "updated_at"])
+        return super().update(instance, validated_data)
 
     def validate_birthday_month(self, value):
         if value is not None and (value < 1 or value > 12):

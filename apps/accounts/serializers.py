@@ -35,6 +35,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "account_id", "review_status"]
 
+    def validate_nickname(self, value: str) -> str:
+        if not value or not value.strip():
+            raise serializers.ValidationError("昵称不能为空")
+        return value.strip()
+
     def validate_email(self, value: str) -> str:
         email = User.objects.normalize_email(value)
         if User.objects.filter(email__iexact=email).exists():

@@ -15,15 +15,17 @@
       </el-form-item>
       <el-form-item label="真实姓名" prop="real_name">
         <el-input v-model="form.real_name" />
+        <div class="field-tip">用于身份审核和活动实名，不会默认公开。可在个人资料中设置是否展示。</div>
+      </el-form-item>
+      <el-form-item label="昵称" prop="nickname">
+        <el-input v-model="form.nickname" placeholder="同学之间怎么称呼你" />
+        <div class="field-tip">发动态、评论时默认显示的名称。可随时在个人资料中修改。</div>
       </el-form-item>
       <el-form-item label="高三所在学校" prop="high_school">
         <el-input v-model="form.high_school" />
       </el-form-item>
       <el-form-item label="高三所在班级" prop="high_school_class">
         <el-input v-model="form.high_school_class" placeholder="例如：高三一班" />
-      </el-form-item>
-      <el-form-item label="外号（选填）" prop="nickname">
-        <el-input v-model="form.nickname" />
       </el-form-item>
       <el-form-item label="其它信息（选填）" prop="extra_info">
         <el-input v-model="form.extra_info" type="textarea" :rows="3" placeholder="可填写班主任、座位、寝室、毕业后所在城市等辅助说明" />
@@ -84,6 +86,7 @@ const rules: FormRules<RegisterPayload> = {
     },
   ],
   real_name: [{ required: true, message: '请填写真实姓名', trigger: 'blur' }],
+  nickname: [{ required: true, message: '请填写昵称', trigger: 'blur' }],
   high_school: [{ required: true, message: '请填写高三所在学校', trigger: 'blur' }],
   high_school_class: [{ required: true, message: '请填写高三所在班级', trigger: 'blur' }],
 }
@@ -102,3 +105,7 @@ async function submit() {
   }
 }
 </script>
+
+<style scoped>
+.field-tip { margin-top: 4px; color: #6b7280; font-size: 13px; line-height: 1.5; }
+</style>

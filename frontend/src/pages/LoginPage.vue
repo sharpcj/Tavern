@@ -39,7 +39,11 @@ async function submit() {
   submitting.value = true
   try {
     await authStore.login(form.email, form.password)
-    router.push('/review-status')
+    if (authStore.isReviewApproved) {
+      router.push('/')
+    } else {
+      router.push('/review-status')
+    }
   } catch {
     ElMessage.error('登录失败，请检查邮箱和密码')
   } finally {

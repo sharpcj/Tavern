@@ -111,8 +111,8 @@ export async function deletePost(id: number): Promise<void> {
 }
 
 export async function fetchComments(postId: number): Promise<CommentItem[]> {
-  const resp = await apiClient.get<CommentItem[]>(`/v1/posts/${postId}/comments/`)
-  return resp.data
+  const resp = await apiClient.get<PaginatedResponse<CommentItem>>(`/v1/posts/${postId}/comments/`)
+  return resp.data.results
 }
 
 export async function createComment(postId: number, data: CommentCreatePayload): Promise<CommentItem> {
