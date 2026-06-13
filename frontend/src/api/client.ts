@@ -2,7 +2,12 @@ import axios from 'axios'
 
 import { getAccessToken } from '@/stores/auth'
 
-const apiBaseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api'
+function getDefaultApiBaseURL() {
+  if (typeof window === 'undefined') return 'http://localhost:8000/api'
+  return `${window.location.protocol}//${window.location.hostname}:8000/api`
+}
+
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL ?? getDefaultApiBaseURL()
 
 export const apiClient = axios.create({
   baseURL: apiBaseURL,

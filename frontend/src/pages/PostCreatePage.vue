@@ -6,8 +6,14 @@
       <el-form-item label="内容" prop="content">
         <el-input v-model="form.content" type="textarea" :rows="6" placeholder="分享你的近况、回忆或想法..." />
       </el-form-item>
-      <el-form-item label="图片链接（选填，每行一个）">
-        <el-input v-model="imageText" type="textarea" :rows="3" placeholder="https://example.com/photo1.jpg" />
+      <el-form-item label="图片（选填）">
+        <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" multiple @change="onFileChange" />
+        <div class="field-tip">可一次选择多张图片，仅支持 JPG、PNG、GIF、WebP，单张不超过 10 MB。</div>
+        <div v-if="selectedFiles.length" class="selected-files">
+          <el-tag v-for="file in selectedFiles" :key="`${file.name}-${file.size}`" closable @close="removeFile(file)">
+            {{ file.name }}
+          </el-tag>
+        </div>
       </el-form-item>
       <el-row :gutter="16">
         <el-col :span="12">
@@ -35,7 +41,7 @@
 <script setup lang="ts">
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
-import { computed, reactive, ref } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { createPost, POST_CATEGORIES, type PostCreatePayload } from '@/api/posts'
@@ -43,11 +49,13 @@ import { createPost, POST_CATEGORIES, type PostCreatePayload } from '@/api/posts
 const router = useRouter()
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
-const imageText = ref('')
+const selectedFiles = ref<File[]>([])
+
+const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
 
 const form = reactive<PostCreatePayload>({
   content: '',
-  images: [],
+  uploaded_images: [],
   category: 'chat',
   display_mode: 'real_name',
 })
@@ -57,24 +65,48 @@ const rules: FormRules<PostCreatePayload> = {
   category: [{ required: true, message: '请选择分类', trigger: 'change' }],
 }
 
-const parsedImages = computed(() =>
-  imageText.value
-    .split('\n')
-    .map(s => s.trim())
-    .filter(s => s.startsWith('http://') || s.startsWith('https://'))
-)
+function onFileChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  const validFiles: File[] = []
+  for (const file of files) {
+    if (!allowedImageTypes.has(file.type)) {
+      ElMessage.warning(`${file.name} 不是支持的图片格式`)
+      continue
+    }
+    validFiles.push(file)
+  }
+  selectedFiles.value = validFiles
+  form.uploaded_images = validFiles
+  input.value = ''
+}
+
+function removeFile(file: File) {
+  selectedFiles.value = selectedFiles.value.filter(item => item !== file)
+  form.uploaded_images = selectedFiles.value
+}
 
 async function submit() {
   await formRef.value?.validate()
   submitting.value = true
   try {
-    await createPost({ ...form, images: parsedImages.value })
+    await createPost({ ...form, uploaded_images: selectedFiles.value })
     ElMessage.success('发布成功')
     router.push('/')
   } catch {
-    ElMessage.error('发布失败')
+    ElMessage.error('发布失败，请确认图片格式正确且单张不超过 10 MB')
   } finally {
     submitting.value = false
   }
 }
 </script>
+
+<style scoped>
+.field-tip { margin-top: 6px; color: #6b7280; font-size: 13px; }
+.selected-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+</style>

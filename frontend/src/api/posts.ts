@@ -30,7 +30,7 @@ export interface PostDetail {
 
 export interface PostCreatePayload {
   content: string
-  images?: string[]
+  uploaded_images?: File[]
   category: string
   display_mode: 'real_name' | 'nickname'
 }
@@ -96,13 +96,22 @@ export async function fetchPostDetail(id: number): Promise<PostDetail> {
   return resp.data
 }
 
+function buildPostFormData(data: Partial<PostCreatePayload>): FormData {
+  const formData = new FormData()
+  if (data.content !== undefined) formData.append('content', data.content)
+  if (data.category !== undefined) formData.append('category', data.category)
+  if (data.display_mode !== undefined) formData.append('display_mode', data.display_mode)
+  data.uploaded_images?.forEach(file => formData.append('uploaded_images', file))
+  return formData
+}
+
 export async function createPost(data: PostCreatePayload): Promise<PostDetail> {
-  const resp = await apiClient.post<PostDetail>('/v1/posts/', data)
+  const resp = await apiClient.post<PostDetail>('/v1/posts/', buildPostFormData(data))
   return resp.data
 }
 
 export async function updatePost(id: number, data: Partial<PostCreatePayload>): Promise<PostDetail> {
-  const resp = await apiClient.patch<PostDetail>(`/v1/posts/${id}/`, data)
+  const resp = await apiClient.patch<PostDetail>(`/v1/posts/${id}/`, buildPostFormData(data))
   return resp.data
 }
 

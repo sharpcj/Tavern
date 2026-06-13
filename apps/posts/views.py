@@ -44,6 +44,12 @@ class PostListView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        if self.request.method == "POST":
+            context["uploaded_images"] = self.request.FILES.getlist("uploaded_images")
+        return context
+
     @extend_schema(
         tags=["posts"],
         parameters=[
@@ -57,7 +63,12 @@ class PostListView(generics.ListCreateAPIView):
 
     @extend_schema(request=PostCreateSerializer, responses=PostDetailSerializer, tags=["posts"])
     def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        uploaded_images = request.FILES.getlist("uploaded_images")
+        serializer.validate_uploaded_images(uploaded_images)
+        post = serializer.save(author=request.user)
+        return Response(PostDetailSerializer(post, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -72,6 +83,12 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method in ("PATCH", "PUT"):
             return PostCreateSerializer
         return PostDetailSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        if self.request.method in ("PATCH", "PUT") and "uploaded_images" in self.request.FILES:
+            context["uploaded_images"] = self.request.FILES.getlist("uploaded_images")
+        return context
 
     def check_object_permissions(self, request, obj):
         super().check_object_permissions(request, obj)
@@ -88,7 +105,15 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     @extend_schema(request=PostCreateSerializer, responses=PostDetailSerializer, tags=["posts"])
     def patch(self, request, *args, **kwargs):
-        return super().patch(request, *args, **kwargs)
+        partial = kwargs.pop("partial", True)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        uploaded_images = request.FILES.getlist("uploaded_images")
+        if uploaded_images:
+            serializer.validate_uploaded_images(uploaded_images)
+        post = serializer.save()
+        return Response(PostDetailSerializer(post, context={"request": request}).data)
 
     @extend_schema(tags=["posts"])
     def delete(self, request, *args, **kwargs):
