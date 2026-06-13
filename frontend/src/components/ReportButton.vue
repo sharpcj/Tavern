@@ -1,6 +1,6 @@
 <template>
   <el-button text size="small" type="warning" @click="dialogVisible = true">举报</el-button>
-  <el-dialog v-model="dialogVisible" title="举报内容" width="420px">
+  <el-dialog v-model="dialogVisible" title="举报内容" width="420px" top="22vh" class="report-dialog">
     <el-form label-position="top">
       <el-form-item label="举报理由">
         <el-select v-model="form.reason" style="width: 100%">
@@ -45,3 +45,35 @@ async function submit() {
   }
 }
 </script>
+
+<style scoped>
+:deep(.report-dialog) {
+  border-radius: 14px;
+}
+
+:deep(.report-dialog .el-dialog__footer) {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+:deep(.report-dialog .el-dialog__footer .el-button + .el-button) {
+  margin-left: 0;
+}
+
+@media (max-width: 768px) {
+  :deep(.report-dialog) {
+    width: calc(100vw - 32px) !important;
+    max-width: calc(100vw - 32px) !important;
+    margin-top: 18vh !important;
+  }
+
+  :deep(.report-dialog .el-dialog__footer) {
+    flex-direction: column-reverse;
+  }
+
+  :deep(.report-dialog .el-dialog__footer .el-button) {
+    width: 100%;
+  }
+}
+</style>

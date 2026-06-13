@@ -4,8 +4,20 @@
   font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  min-height: 100%;
+}
+
 body {
   margin: 0;
+  overflow-x: hidden;
 }
 
 .app-shell {
@@ -24,6 +36,7 @@ body {
   cursor: pointer;
   font-size: 18px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .app-nav {
@@ -33,12 +46,14 @@ body {
 }
 
 .page-card {
+  width: min(880px, calc(100% - 32px));
   max-width: 880px;
   margin: 48px auto;
   padding: 32px;
   border-radius: 16px;
   background: #ffffff;
   box-shadow: 0 16px 40px rgb(15 23 42 / 8%);
+  overflow-x: auto;
 }
 
 .auth-card {
@@ -58,4 +73,171 @@ body {
   display: flex;
   gap: 12px;
   margin-top: 24px;
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    height: auto;
+    min-height: 56px;
+    padding: 8px 12px;
+  }
+
+  .app-title {
+    max-width: calc(100vw - 96px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 16px;
+  }
+
+  .app-nav {
+    gap: 6px;
+  }
+
+  .el-main {
+    padding: 12px !important;
+  }
+
+  .page-card {
+    width: 100%;
+    max-width: 100%;
+    margin: 12px 0;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgb(15 23 42 / 6%);
+  }
+
+  .page-card h1 {
+    font-size: 22px;
+    line-height: 1.35;
+  }
+
+  .page-card h2 {
+    font-size: 18px;
+    line-height: 1.4;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .actions .el-button,
+  .page-card > .el-button,
+  .el-form .el-button {
+    width: 100%;
+    margin-left: 0 !important;
+    margin-top: 8px;
+  }
+
+  .el-row {
+    row-gap: 12px;
+  }
+
+  .el-col {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+
+  .el-radio-group,
+  .el-checkbox-group {
+    max-width: 100%;
+  }
+
+  .el-radio-button__inner {
+    padding: 8px 10px;
+  }
+
+  .el-table {
+    min-width: 680px;
+  }
+
+  .el-table__body-wrapper,
+  .el-table__header-wrapper {
+    overflow-x: auto;
+  }
+
+  .el-pagination {
+    white-space: normal;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .feed-header {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 12px;
+  }
+
+  .feed-header .el-button {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+
+  .category-filter,
+  .filter-bar {
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    white-space: nowrap;
+  }
+
+  .category-filter .el-radio-button,
+  .filter-bar .el-radio-button {
+    flex: 0 0 auto;
+  }
+
+  .post-card,
+  .activity-card {
+    padding: 14px !important;
+  }
+
+  .post-card-header,
+  .card-header,
+  .card-meta {
+    flex-wrap: wrap;
+    align-items: flex-start !important;
+  }
+
+  .post-time {
+    flex: initial !important;
+    width: 100%;
+  }
+
+  .post-images {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px !important;
+  }
+
+  .post-thumb {
+    width: 100% !important;
+    height: 84px !important;
+  }
+
+  .photo-grid,
+  .album-grid,
+  .birthday-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .search-bar {
+    row-gap: 12px;
+  }
+
+  .el-dialog {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    margin: 8vh auto 0 !important;
+  }
+
+  .el-input-number,
+  .el-select,
+  .el-date-editor,
+  .el-cascader {
+    width: 100% !important;
+  }
+
+  .el-tabs__nav-wrap {
+    overflow-x: auto;
+  }
 }
