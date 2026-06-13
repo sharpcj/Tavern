@@ -9,6 +9,7 @@
           <el-button text @click="$router.push('/announcements')">公告</el-button>
           <el-button text @click="$router.push('/albums')">相册</el-button>
           <el-button text @click="$router.push('/birthdays')">生日</el-button>
+          <el-button v-if="authStore.isModeratorOrAbove" text @click="$router.push('/admin/reports')">举报处理</el-button>
           <el-button text @click="$router.push('/profile/edit')">编辑资料</el-button>
         </template>
         <template v-if="!authStore.isAuthenticated">

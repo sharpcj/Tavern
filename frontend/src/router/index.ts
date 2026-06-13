@@ -18,6 +18,7 @@ import AlbumCreatePage from '@/pages/AlbumCreatePage.vue'
 import AlbumDetailPage from '@/pages/AlbumDetailPage.vue'
 import PhotoDetailPage from '@/pages/PhotoDetailPage.vue'
 import BirthdayPage from '@/pages/BirthdayPage.vue'
+import AdminReportsPage from '@/pages/AdminReportsPage.vue'
 import PostListPage from '@/pages/PostListPage.vue'
 import ProfileEditPage from '@/pages/ProfileEditPage.vue'
 import RegisterPage from '@/pages/RegisterPage.vue'
@@ -29,6 +30,7 @@ declare module 'vue-router' {
     requiresAuth?: boolean
     requiresApproved?: boolean
     allowRestricted?: boolean
+    requiresModerator?: boolean
   }
 }
 
@@ -159,6 +161,12 @@ const router = createRouter({
           component: BirthdayPage,
           meta: { requiresAuth: true, requiresApproved: true },
         },
+        {
+          path: 'admin/reports',
+          name: 'admin-reports',
+          component: AdminReportsPage,
+          meta: { requiresAuth: true, requiresApproved: true, requiresModerator: true },
+        },
       ],
     },
     {
@@ -211,6 +219,11 @@ router.beforeEach(async (to, _from, next) => {
       next({ name: 'review-status' })
       return
     }
+  }
+
+  if (to.meta.requiresModerator && !authStore.isModeratorOrAbove) {
+    next({ name: 'home' })
+    return
   }
 
   next()

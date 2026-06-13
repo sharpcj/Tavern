@@ -12,7 +12,7 @@
             <el-button text size="small" @click="startEdit">编辑</el-button>
             <el-button text size="small" type="danger" @click="doDelete">删除</el-button>
           </span>
-          <el-button text size="small" type="warning" @click="showReportTip">举报</el-button>
+          <ReportButton target-type="post" :object-id="post.id" />
         </div>
       </div>
 
@@ -49,6 +49,7 @@
           <span class="comment-author">{{ comment.display_name }}</span>
           <span class="comment-time">{{ formatTime(comment.created_at) }}</span>
           <el-button v-if="comment.author_id === authStore.currentUser?.account_id" text size="small" type="danger" @click="deleteCommentItem(comment.id)">删除</el-button>
+          <ReportButton target-type="comment" :object-id="comment.id" />
           <el-button text size="small" @click="startReply(comment.id)">回复</el-button>
         </div>
         <div class="comment-content">{{ comment.content }}</div>
@@ -70,6 +71,7 @@
             <span class="comment-author">{{ reply.display_name }}</span>
             <span class="comment-time">{{ formatTime(reply.created_at) }}</span>
             <el-button v-if="reply.author_id === authStore.currentUser?.account_id" text size="small" type="danger" @click="deleteCommentItem(reply.id)">删除</el-button>
+            <ReportButton target-type="comment" :object-id="reply.id" />
             <div class="comment-content">{{ reply.content }}</div>
           </div>
         </div>
@@ -95,6 +97,7 @@ import {
   type PostDetail,
 } from '@/api/posts'
 import { useAuthStore } from '@/stores/auth'
+import ReportButton from '@/components/ReportButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -190,10 +193,6 @@ async function doDelete() {
     ElMessage.success('已删除')
     router.push('/')
   } catch { /* cancelled */ }
-}
-
-function showReportTip() {
-  ElMessage.info('举报功能将在后续版本上线')
 }
 
 function formatTime(iso: string) {

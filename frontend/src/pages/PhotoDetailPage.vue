@@ -7,6 +7,7 @@
       </div>
       <p class="caption">{{ photo.caption || '暂无说明' }}</p>
       <p class="muted">上传人：{{ photo.display_name }} · {{ formatTime(photo.created_at) }}</p>
+      <ReportButton target-type="photo" :object-id="photo.id" />
 
       <div class="comment-box">
         <h2>评论</h2>
@@ -38,6 +39,7 @@ import { ElMessage } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { createPhotoComment, fetchPhotoDetail, type PhotoDetail } from '@/api/albums'
+import ReportButton from '@/components/ReportButton.vue'
 
 const route = useRoute()
 const loading = ref(true)

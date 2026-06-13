@@ -16,6 +16,8 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (state) => Boolean(state.accessToken),
     reviewStatus: (state) => state.currentUser?.review_status ?? null,
     accountStatus: (state) => state.currentUser?.account_status ?? null,
+    role: (state) => state.currentUser?.role ?? null,
+    isModeratorOrAbove: (state) => state.currentUser?.role === 'moderator' || state.currentUser?.role === 'super_admin',
     isReviewApproved: (state) => state.currentUser?.review_status === 'approved',
     isAccountNormal: (state) => state.currentUser?.account_status === 'normal',
     isAccountBanned: (state) => state.currentUser?.account_status === 'banned',

@@ -7,6 +7,7 @@
         <el-tag :type="statusTag(activity.status)" style="margin-left:8px">{{ activity.status_display }}</el-tag>
         <h1>{{ activity.title }}</h1>
         <p class="muted">发起人：{{ activity.initiator_name }} · {{ formatTime(activity.created_at) }}</p>
+        <ReportButton target-type="activity" :object-id="activity.id" />
       </div>
 
       <div class="body-text">{{ activity.description }}</div>
@@ -89,6 +90,7 @@ import { ElMessage } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchActivityDetail, signupActivity, voteActivity, fillChain, type ActivityDetail } from '@/api/activities'
+import ReportButton from '@/components/ReportButton.vue'
 
 const route = useRoute()
 const loading = ref(true)

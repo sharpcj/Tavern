@@ -50,6 +50,7 @@
             <span>{{ formatTime(wish.created_at) }}</span>
           </div>
           <div class="wish-content">{{ wish.content }}</div>
+          <ReportButton target-type="birthday_wish" :object-id="wish.id" />
         </div>
       </div>
     </div>
@@ -60,6 +61,7 @@
 import { ElMessage } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
 import { createBirthdayWish, fetchBirthdayWishes, fetchCurrentMonthBirthdays, type BirthdayClassmate, type BirthdayWish } from '@/api/birthdays'
+import ReportButton from '@/components/ReportButton.vue'
 
 const loadingBirthdays = ref(false)
 const loadingWishes = ref(false)
