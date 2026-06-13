@@ -3,9 +3,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import ClassmateDetailPage from '@/pages/ClassmateDetailPage.vue'
 import ClassmateListPage from '@/pages/ClassmateListPage.vue'
-import HomePage from '@/pages/HomePage.vue'
 import LoginPage from '@/pages/LoginPage.vue'
 import NotFoundPage from '@/pages/NotFoundPage.vue'
+import PostCreatePage from '@/pages/PostCreatePage.vue'
+import PostDetailPage from '@/pages/PostDetailPage.vue'
+import PostListPage from '@/pages/PostListPage.vue'
 import ProfileEditPage from '@/pages/ProfileEditPage.vue'
 import RegisterPage from '@/pages/RegisterPage.vue'
 import ReviewStatusPage from '@/pages/ReviewStatusPage.vue'
@@ -29,8 +31,8 @@ const router = createRouter({
         {
           path: '',
           name: 'home',
-          component: HomePage,
-          meta: { requiresAuth: false },
+          component: PostListPage,
+          meta: { requiresAuth: true, requiresApproved: true },
         },
         {
           path: 'register',
@@ -66,6 +68,18 @@ const router = createRouter({
           path: 'classmates/:accountId',
           name: 'classmate-detail',
           component: ClassmateDetailPage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
+        {
+          path: 'posts/create',
+          name: 'post-create',
+          component: PostCreatePage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
+        {
+          path: 'posts/:id',
+          name: 'post-detail',
+          component: PostDetailPage,
           meta: { requiresAuth: true, requiresApproved: true },
         },
       ],
