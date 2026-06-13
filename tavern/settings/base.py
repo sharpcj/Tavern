@@ -140,6 +140,9 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "SCHEMA_PATH_PREFIX": r"/api/v[0-9]",
+    "ENUM_NAME_OVERRIDES": {
+        "ContactVisibilityEnum": "apps.profiles.models.ContactVisibility",
+    },
 }
 
 REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")

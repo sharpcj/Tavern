@@ -1,9 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import ClassmateDetailPage from '@/pages/ClassmateDetailPage.vue'
+import ClassmateListPage from '@/pages/ClassmateListPage.vue'
 import HomePage from '@/pages/HomePage.vue'
 import LoginPage from '@/pages/LoginPage.vue'
 import NotFoundPage from '@/pages/NotFoundPage.vue'
+import ProfileEditPage from '@/pages/ProfileEditPage.vue'
 import RegisterPage from '@/pages/RegisterPage.vue'
 import ReviewStatusPage from '@/pages/ReviewStatusPage.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -47,6 +50,24 @@ const router = createRouter({
           component: ReviewStatusPage,
           meta: { requiresAuth: true },
         },
+        {
+          path: 'profile/edit',
+          name: 'profile-edit',
+          component: ProfileEditPage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
+        {
+          path: 'classmates',
+          name: 'classmate-list',
+          component: ClassmateListPage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
+        {
+          path: 'classmates/:accountId',
+          name: 'classmate-detail',
+          component: ClassmateDetailPage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
       ],
     },
     {
@@ -60,7 +81,6 @@ const router = createRouter({
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
 
-  // Load user info if we have a token but no user data yet.
   if (authStore.isAuthenticated && !authStore.userLoaded) {
     await authStore.loadCurrentUser()
   }
@@ -68,19 +88,15 @@ router.beforeEach(async (to, _from, next) => {
   const requiresAuth = to.meta.requiresAuth !== false
 
   if (!requiresAuth) {
-    // Public pages: register, login, home — always accessible.
     next()
     return
   }
-
-  // --- All routes below require authentication ---
 
   if (!authStore.isAuthenticated) {
     next({ name: 'login', query: { redirect: to.fullPath } })
     return
   }
 
-  // Banned users can only see review-status.
   if (authStore.isAccountBanned) {
     if (to.name !== 'review-status') {
       next({ name: 'review-status' })
@@ -90,7 +106,6 @@ router.beforeEach(async (to, _from, next) => {
     return
   }
 
-  // Non-approved users (pending, rejected, need_more_info) can only see review-status.
   if (!authStore.isReviewApproved) {
     if (to.name !== 'review-status') {
       next({ name: 'review-status' })
@@ -100,7 +115,6 @@ router.beforeEach(async (to, _from, next) => {
     return
   }
 
-  // Restricted users: only pages that explicitly allow restricted access.
   if (authStore.isAccountRestricted && !to.meta.allowRestricted) {
     if (to.name !== 'review-status') {
       next({ name: 'review-status' })

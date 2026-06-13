@@ -3,9 +3,18 @@
     <el-header class="app-header">
       <div class="app-title" @click="$router.push('/')">Tavern 同学社区</div>
       <div class="app-nav">
-        <el-button text @click="$router.push('/register')">注册</el-button>
-        <el-button text @click="$router.push('/login')">登录</el-button>
-        <el-button text @click="$router.push('/review-status')">审核状态</el-button>
+        <template v-if="authStore.isAuthenticated && authStore.isReviewApproved">
+          <el-button text @click="$router.push('/classmates')">通讯录</el-button>
+          <el-button text @click="$router.push('/profile/edit')">编辑资料</el-button>
+        </template>
+        <template v-if="!authStore.isAuthenticated">
+          <el-button text @click="$router.push('/register')">注册</el-button>
+          <el-button text @click="$router.push('/login')">登录</el-button>
+        </template>
+        <template v-if="authStore.isAuthenticated">
+          <el-button text @click="$router.push('/review-status')">审核状态</el-button>
+          <el-button text @click="logout">退出</el-button>
+        </template>
       </div>
     </el-header>
     <el-main>
@@ -13,3 +22,16 @@
     </el-main>
   </el-container>
 </template>
+
+<script setup lang="ts">
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+function logout() {
+  authStore.logout()
+  router.push('/login')
+}
+</script>
