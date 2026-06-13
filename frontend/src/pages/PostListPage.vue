@@ -1,4 +1,5 @@
 <template>
+  <AnnouncementBanner />
   <section class="page-card">
     <div class="feed-header">
       <h1>班级动态</h1>
@@ -44,6 +45,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 
+import AnnouncementBanner from '@/components/AnnouncementBanner.vue'
 import { fetchPosts, POST_CATEGORIES, type PostListItem } from '@/api/posts'
 
 const loading = ref(false)

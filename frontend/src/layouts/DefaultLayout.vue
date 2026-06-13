@@ -6,6 +6,7 @@
         <template v-if="authStore.isAuthenticated && authStore.isReviewApproved">
           <el-button text @click="$router.push('/classmates')">通讯录</el-button>
           <el-button text @click="$router.push('/activities')">活动</el-button>
+          <el-button text @click="$router.push('/announcements')">公告</el-button>
           <el-button text @click="$router.push('/profile/edit')">编辑资料</el-button>
         </template>
         <template v-if="!authStore.isAuthenticated">

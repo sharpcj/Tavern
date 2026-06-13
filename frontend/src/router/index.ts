@@ -10,6 +10,9 @@ import PostDetailPage from '@/pages/PostDetailPage.vue'
 import ActivityListPage from '@/pages/ActivityListPage.vue'
 import ActivityCreatePage from '@/pages/ActivityCreatePage.vue'
 import ActivityDetailPage from '@/pages/ActivityDetailPage.vue'
+import AnnouncementListPage from '@/pages/AnnouncementListPage.vue'
+import AnnouncementDetailPage from '@/pages/AnnouncementDetailPage.vue'
+import AnnouncementCreatePage from '@/pages/AnnouncementCreatePage.vue'
 import PostListPage from '@/pages/PostListPage.vue'
 import ProfileEditPage from '@/pages/ProfileEditPage.vue'
 import RegisterPage from '@/pages/RegisterPage.vue'
@@ -83,6 +86,42 @@ const router = createRouter({
           path: 'posts/:id',
           name: 'post-detail',
           component: PostDetailPage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
+        {
+          path: 'activities',
+          name: 'activity-list',
+          component: ActivityListPage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
+        {
+          path: 'activities/create',
+          name: 'activity-create',
+          component: ActivityCreatePage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
+        {
+          path: 'activities/:id',
+          name: 'activity-detail',
+          component: ActivityDetailPage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
+        {
+          path: 'announcements',
+          name: 'announcement-list',
+          component: AnnouncementListPage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
+        {
+          path: 'announcements/create',
+          name: 'announcement-create',
+          component: AnnouncementCreatePage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
+        {
+          path: 'announcements/:id',
+          name: 'announcement-detail',
+          component: AnnouncementDetailPage,
           meta: { requiresAuth: true, requiresApproved: true },
         },
       ],
