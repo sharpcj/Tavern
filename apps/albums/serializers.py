@@ -25,12 +25,13 @@ class PhotoCommentSerializer(serializers.ModelSerializer):
 
 class PhotoListSerializer(serializers.ModelSerializer):
     display_name = serializers.CharField(read_only=True)
+    album = serializers.IntegerField(source="album_id", read_only=True)
     image_url = serializers.SerializerMethodField()
     comment_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Photo
-        fields = ["id", "display_name", "caption", "display_mode", "image_url", "comment_count", "created_at"]
+        fields = ["id", "album", "display_name", "caption", "display_mode", "image_url", "comment_count", "created_at"]
         read_only_fields = fields
 
     def get_image_url(self, obj: Photo) -> str:

@@ -15,6 +15,7 @@ export interface AlbumListItem {
 
 export interface PhotoListItem {
   id: number
+  album: number
   display_name: string
   caption: string
   display_mode: string

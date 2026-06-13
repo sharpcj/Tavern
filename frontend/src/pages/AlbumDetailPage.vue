@@ -23,7 +23,8 @@
       <el-dialog v-model="showUpload" title="上传照片" width="500px">
         <el-form label-position="top">
           <el-form-item label="图片">
-            <input type="file" accept="image/*" @change="onFileChange" />
+            <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" @change="onFileChange" />
+            <div class="field-tip">仅支持 JPG、PNG、GIF、WebP 图片，单张不超过 10 MB。</div>
           </el-form-item>
           <el-form-item label="说明">
             <el-input v-model="uploadForm.caption" type="textarea" :rows="3" />
@@ -58,6 +59,8 @@ const album = ref<AlbumDetail | null>(null)
 const selectedFile = ref<File | null>(null)
 const uploadForm = reactive({ caption: '', display_mode: 'real_name' })
 
+const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
+
 async function load() {
   loading.value = true
   try { album.value = await fetchAlbumDetail(Number(route.params.id)) }
@@ -66,7 +69,18 @@ async function load() {
 
 function onFileChange(event: Event) {
   const input = event.target as HTMLInputElement
-  selectedFile.value = input.files?.[0] ?? null
+  const file = input.files?.[0] ?? null
+  if (!file) {
+    selectedFile.value = null
+    return
+  }
+  if (!allowedImageTypes.has(file.type)) {
+    selectedFile.value = null
+    input.value = ''
+    ElMessage.warning('只能上传 JPG、PNG、GIF 或 WebP 图片')
+    return
+  }
+  selectedFile.value = file
 }
 
 async function submitUpload() {
@@ -82,6 +96,8 @@ async function submitUpload() {
     selectedFile.value = null
     uploadForm.caption = ''
     await load()
+  } catch {
+    ElMessage.error('上传失败，请确认文件是有效图片且不超过 10 MB')
   } finally { submitting.value = false }
 }
 
@@ -96,4 +112,5 @@ onMounted(() => load())
 .photo-card { border-radius: 10px; overflow: hidden; border: 1px solid #e5e7eb; cursor: pointer; background: #fff; }
 .photo-card img { width: 100%; height: 150px; object-fit: cover; display: block; }
 .photo-caption { padding: 8px; color: #4b5563; font-size: 13px; }
+.field-tip { margin-top: 6px; color: #6b7280; font-size: 13px; }
 </style>
