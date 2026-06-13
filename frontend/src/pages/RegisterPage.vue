@@ -37,7 +37,14 @@
         :closable="false"
         show-icon
       />
-      <el-button type="primary" :loading="submitting" native-type="submit">提交注册</el-button>
+      <el-form-item>
+        <el-checkbox v-model="agreedToTerms">
+          我已阅读并同意
+          <router-link class="convention-link" to="/community-convention" @click.stop>《社区公约》</router-link>
+          ，理解本网站仅面向同班同学开放，注册信息将用于身份审核和社区治理。
+        </el-checkbox>
+      </el-form-item>
+      <el-button type="primary" :loading="submitting" :disabled="!agreedToTerms" native-type="submit">提交注册</el-button>
       <el-button text @click="$router.push('/login')">已有账号，去登录</el-button>
     </el-form>
   </section>
@@ -54,6 +61,7 @@ import { register, type RegisterPayload } from '@/api/auth'
 const router = useRouter()
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
+const agreedToTerms = ref(false)
 
 const form = reactive<RegisterPayload>({
   email: '',
@@ -92,6 +100,10 @@ const rules: FormRules<RegisterPayload> = {
 }
 
 async function submit() {
+  if (!agreedToTerms.value) {
+    ElMessage.warning('请先勾选同意社区公约')
+    return
+  }
   await formRef.value?.validate()
   submitting.value = true
   try {
@@ -108,4 +120,6 @@ async function submit() {
 
 <style scoped>
 .field-tip { margin-top: 4px; color: #6b7280; font-size: 13px; line-height: 1.5; }
+.convention-link { color: #2563eb; text-decoration: none; }
+.convention-link:hover { text-decoration: underline; }
 </style>

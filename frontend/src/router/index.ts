@@ -4,6 +4,7 @@ import AdminLayout from '@/layouts/AdminLayout.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import ClassmateDetailPage from '@/pages/ClassmateDetailPage.vue'
 import ClassmateListPage from '@/pages/ClassmateListPage.vue'
+import CommunityConventionPage from '@/pages/CommunityConventionPage.vue'
 import LoginPage from '@/pages/LoginPage.vue'
 import NotFoundPage from '@/pages/NotFoundPage.vue'
 import PostCreatePage from '@/pages/PostCreatePage.vue'
@@ -50,6 +51,7 @@ const router = createRouter({
       children: [
         { path: '', name: 'home', component: PostListPage, meta: { requiresAuth: true, requiresApproved: true } },
         { path: 'register', name: 'register', component: RegisterPage, meta: { requiresAuth: false } },
+        { path: 'community-convention', name: 'community-convention', component: CommunityConventionPage, meta: { requiresAuth: false } },
         { path: 'login', name: 'login', component: LoginPage, meta: { requiresAuth: false } },
         { path: 'review-status', name: 'review-status', component: ReviewStatusPage, meta: { requiresAuth: true } },
         { path: 'profile/edit', name: 'profile-edit', component: ProfileEditPage, meta: { requiresAuth: true, requiresApproved: true } },
