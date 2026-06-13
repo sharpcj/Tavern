@@ -14,13 +14,64 @@ from apps.common.validators import validate_file_size, validate_image_type
 from .models import Album, AlbumCategory, Photo, PhotoComment
 
 
-class PhotoCommentSerializer(serializers.ModelSerializer):
+class PhotoCommentReplySerializer(serializers.ModelSerializer):
+    """A flat reply displayed under a top-level photo comment."""
+
     display_name = serializers.CharField(read_only=True)
+    author_id = serializers.UUIDField(source="author.account_id", read_only=True)
+    author_real_name = serializers.CharField(source="author.real_name", read_only=True)
+    parent = serializers.IntegerField(source="parent_id", read_only=True)
+    reply_to = serializers.IntegerField(source="reply_to_id", read_only=True)
+    reply_to_display_name = serializers.SerializerMethodField()
 
     class Meta:
         model = PhotoComment
-        fields = ["id", "display_name", "content", "display_mode", "created_at"]
-        read_only_fields = ["id", "display_name", "created_at"]
+        fields = [
+            "id",
+            "author_id",
+            "author_real_name",
+            "display_name",
+            "content",
+            "display_mode",
+            "parent",
+            "reply_to",
+            "reply_to_display_name",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_reply_to_display_name(self, obj: PhotoComment) -> str:
+        if obj.reply_to_id and obj.reply_to:
+            return obj.reply_to.display_name
+        return ""
+
+
+class PhotoCommentSerializer(serializers.ModelSerializer):
+    display_name = serializers.CharField(read_only=True)
+    author_id = serializers.UUIDField(source="author.account_id", read_only=True)
+    author_real_name = serializers.CharField(source="author.real_name", read_only=True)
+    replies = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PhotoComment
+        fields = [
+            "id",
+            "author_id",
+            "author_real_name",
+            "display_name",
+            "content",
+            "display_mode",
+            "parent",
+            "replies",
+            "created_at",
+        ]
+        read_only_fields = ["id", "author_id", "author_real_name", "display_name", "parent", "replies", "created_at"]
+
+    def get_replies(self, obj: PhotoComment) -> list:
+        if obj.parent is not None:
+            return []
+        replies_qs = obj.replies.filter(status=ContentStatus.PUBLISHED).select_related("author", "reply_to", "reply_to__author")
+        return PhotoCommentReplySerializer(replies_qs, many=True, context=self.context).data
 
 
 class PhotoListSerializer(serializers.ModelSerializer):
@@ -52,7 +103,11 @@ class PhotoDetailSerializer(PhotoListSerializer):
         fields = PhotoListSerializer.Meta.fields + ["comments"]
 
     def get_comments(self, obj: Photo) -> list:
-        comments = obj.comments.filter(status=ContentStatus.PUBLISHED)
+        comments = (
+            obj.comments.filter(status=ContentStatus.PUBLISHED, parent__isnull=True)
+            .select_related("author")
+            .prefetch_related("replies__author", "replies__reply_to", "replies__reply_to__author")
+        )
         return PhotoCommentSerializer(comments, many=True, context=self.context).data
 
 

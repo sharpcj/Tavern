@@ -26,9 +26,26 @@ export interface PhotoListItem {
 
 export interface PhotoComment {
   id: number
+  author_id: string
+  author_real_name: string
   display_name: string
   content: string
   display_mode: string
+  parent: number | null
+  replies: PhotoCommentReply[]
+  created_at: string
+}
+
+export interface PhotoCommentReply {
+  id: number
+  author_id: string
+  author_real_name: string
+  display_name: string
+  content: string
+  display_mode: string
+  parent: number | null
+  reply_to: number | null
+  reply_to_display_name: string
   created_at: string
 }
 
@@ -103,10 +120,19 @@ export async function createPhotoComment(photoId: number, data: { content: strin
   return resp.data
 }
 
+export async function replyToPhotoComment(commentId: number, data: { content: string; display_mode: string }): Promise<PhotoComment> {
+  const resp = await apiClient.post<PhotoComment>(`/v1/photo-comments/${commentId}/replies/`, data)
+  return resp.data
+}
+
 export async function deleteAlbum(id: number): Promise<void> {
   await apiClient.delete(`/v1/albums/${id}/`)
 }
 
 export async function deletePhoto(id: number): Promise<void> {
   await apiClient.delete(`/v1/photos/${id}/delete/`)
+}
+
+export async function deletePhotoComment(id: number): Promise<void> {
+  await apiClient.delete(`/v1/photo-comments/${id}/`)
 }

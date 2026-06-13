@@ -7,6 +7,7 @@ from .views import (
     AlbumListCreateView,
     PhotoCommentCreateView,
     PhotoCommentDeleteView,
+    PhotoCommentReplyView,
     PhotoDeleteView,
     PhotoDetailView,
     PhotoUploadView,
@@ -19,5 +20,6 @@ urlpatterns = [
     path("photos/<int:pk>/", PhotoDetailView.as_view(), name="photo-detail"),
     path("photos/<int:pk>/delete/", PhotoDeleteView.as_view(), name="photo-delete"),
     path("photos/<int:pk>/comments/", PhotoCommentCreateView.as_view(), name="photo-comment-create"),
+    path("photo-comments/<int:pk>/replies/", PhotoCommentReplyView.as_view(), name="photo-comment-reply"),
     path("photo-comments/<int:pk>/", PhotoCommentDeleteView.as_view(), name="photo-comment-delete"),
 ]

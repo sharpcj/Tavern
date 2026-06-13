@@ -10,7 +10,7 @@ from apps.common.models import SoftDeletableModel
 
 
 class Comment(SoftDeletableModel):
-    """A comment on a post, or a reply to a comment (two-level only)."""
+    """A comment on a post, or a reply displayed under a top-level comment."""
 
     post = models.ForeignKey(
         "posts.Post",
@@ -30,7 +30,15 @@ class Comment(SoftDeletableModel):
         null=True,
         blank=True,
         related_name="replies",
-        verbose_name="父评论",
+        verbose_name="所属一级评论",
+    )
+    reply_to = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="targeted_replies",
+        verbose_name="回复对象",
     )
     content = models.TextField("内容")
     display_mode = models.CharField(

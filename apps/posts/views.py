@@ -159,7 +159,7 @@ class CommentListView(generics.ListCreateAPIView):
         return (
             Comment.objects.filter(post_id=post_id, parent__isnull=True, status=ContentStatus.PUBLISHED)
             .select_related("author")
-            .prefetch_related("replies__author")
+            .prefetch_related("replies__author", "replies__reply_to", "replies__reply_to__author")
         )
 
     def perform_create(self, serializer):
@@ -176,28 +176,34 @@ class CommentListView(generics.ListCreateAPIView):
 
 
 class CommentReplyView(APIView):
-    """Create a reply to an existing comment (two-level only)."""
+    """Create a reply to any existing comment while keeping two-level display."""
 
     permission_classes = [IsApprovedClassmate]
 
     @extend_schema(request=CommentCreateSerializer, responses=CommentSerializer, tags=["comments"])
     def post(self, request, pk: int):
-        parent = generics.get_object_or_404(
-            Comment.objects.filter(status=ContentStatus.PUBLISHED, parent__isnull=True),
+        target = generics.get_object_or_404(
+            Comment.objects.filter(status=ContentStatus.PUBLISHED).select_related("parent", "author"),
             pk=pk,
         )
         serializer = CommentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        reply = serializer.save(author=request.user, post=parent.post, parent=parent)
-        if parent.author != request.user:
+        if target.parent_id is None:
+            root_parent = target
+            reply_to = None
+        else:
+            root_parent = target.parent
+            reply_to = target
+        reply = serializer.save(author=request.user, post=target.post, parent=root_parent, reply_to=reply_to)
+        if target.author != request.user:
             create_notification(
-                recipient=parent.author,
+                recipient=target.author,
                 notification_type=NotificationType.COMMENT_REPLY,
                 title="你的评论收到了回复",
                 content=reply.content[:200],
                 target=reply,
             )
-        return Response(CommentSerializer(reply).data, status=status.HTTP_201_CREATED)
+        return Response(CommentSerializer(reply, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
 class CommentDeleteView(APIView):

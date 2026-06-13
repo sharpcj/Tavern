@@ -156,7 +156,7 @@ class CommentTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Comment.objects.filter(parent=comment).count(), 1)
 
-    def test_cannot_reply_to_reply(self):
+    def test_reply_to_reply_is_flattened_under_root_comment(self):
         comment = Comment.objects.create(
             post=self.post, author=self.user, content="评论", display_mode="real_name",
         )
@@ -170,7 +170,16 @@ class CommentTests(APITestCase):
             {"content": "再回复", "display_mode": "real_name"},
             format="json",
         )
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        nested_reply = Comment.objects.get(content="再回复")
+        self.assertEqual(nested_reply.parent, comment)
+        self.assertEqual(nested_reply.reply_to, reply)
+
+        list_resp = self.client.get(reverse("comment-list", kwargs={"post_pk": self.post.pk}))
+        replies = list_resp.data["results"][0]["replies"]
+        self.assertEqual(len(replies), 2)
+        self.assertEqual(replies[1]["reply_to"], reply.pk)
+        self.assertEqual(replies[1]["reply_to_display_name"], reply.display_name)
 
     def test_delete_own_comment(self):
         comment = Comment.objects.create(

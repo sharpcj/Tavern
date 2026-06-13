@@ -6,7 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers
 
 from apps.activities.models import Activity
-from apps.albums.models import Photo
+from apps.albums.models import Photo, PhotoComment
 from apps.birthdays.models import BirthdayWish
 from apps.comments.models import Comment
 from apps.moderation.models import ModerationActionType
@@ -18,6 +18,7 @@ REPORT_TARGET_MODELS = {
     "post": Post,
     "comment": Comment,
     "photo": Photo,
+    "photo_comment": PhotoComment,
     "activity": Activity,
     "birthday_wish": BirthdayWish,
 }

@@ -99,7 +99,7 @@ class Photo(SoftDeletableModel):
 
 
 class PhotoComment(SoftDeletableModel):
-    """A comment on a photo."""
+    """A comment on a photo, displayed as top-level comments with flat replies."""
 
     photo = models.ForeignKey(Photo, on_delete=models.CASCADE, related_name="comments", verbose_name="照片")
     author = models.ForeignKey(
@@ -107,6 +107,22 @@ class PhotoComment(SoftDeletableModel):
         on_delete=models.PROTECT,
         related_name="photo_comments",
         verbose_name="作者",
+    )
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="replies",
+        verbose_name="所属一级评论",
+    )
+    reply_to = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="targeted_replies",
+        verbose_name="回复对象",
     )
     content = models.TextField("内容")
     display_mode = models.CharField(

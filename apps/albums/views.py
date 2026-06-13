@@ -160,6 +160,30 @@ class PhotoCommentCreateView(APIView):
         return Response(PhotoCommentSerializer(comment, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
+class PhotoCommentReplyView(APIView):
+    """Create a reply to any photo comment while keeping flat two-level display."""
+
+    permission_classes = [IsApprovedClassmate]
+    serializer_class = PhotoCommentCreateSerializer
+
+    @extend_schema(tags=["albums"], request=PhotoCommentCreateSerializer, responses=PhotoCommentSerializer)
+    def post(self, request, pk: int):
+        target = generics.get_object_or_404(
+            PhotoComment.objects.filter(status=ContentStatus.PUBLISHED, photo__status=ContentStatus.PUBLISHED).select_related("parent", "photo", "author"),
+            pk=pk,
+        )
+        serializer = PhotoCommentCreateSerializer(data=request.data, context={"request": request, "photo": target.photo})
+        serializer.is_valid(raise_exception=True)
+        if target.parent_id is None:
+            root_parent = target
+            reply_to = None
+        else:
+            root_parent = target.parent
+            reply_to = target
+        comment = serializer.save(parent=root_parent, reply_to=reply_to)
+        return Response(PhotoCommentSerializer(comment, context={"request": request}).data, status=status.HTTP_201_CREATED)
+
+
 class PhotoCommentDeleteView(APIView):
     permission_classes = [IsApprovedClassmate]
     serializer_class = PhotoCommentSerializer

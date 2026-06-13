@@ -1,6 +1,6 @@
 import { apiClient } from './client'
 
-export type ReportTargetType = 'post' | 'comment' | 'photo' | 'activity' | 'birthday_wish'
+export type ReportTargetType = 'post' | 'comment' | 'photo' | 'photo_comment' | 'activity' | 'birthday_wish'
 
 export interface ReportPayload {
   target_type: ReportTargetType

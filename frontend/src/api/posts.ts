@@ -54,6 +54,9 @@ export interface CommentReply {
   display_name: string
   content: string
   display_mode: string
+  parent: number | null
+  reply_to: number | null
+  reply_to_display_name: string
   created_at: string
 }
 

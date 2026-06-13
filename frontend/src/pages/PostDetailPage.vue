@@ -50,29 +50,42 @@
           <span class="comment-time">{{ formatTime(comment.created_at) }}</span>
           <el-button v-if="comment.author_id === authStore.currentUser?.account_id" text size="small" type="danger" @click="deleteCommentItem(comment.id)">删除</el-button>
           <ReportButton target-type="comment" :object-id="comment.id" />
-          <el-button text size="small" @click="startReply(comment.id)">回复</el-button>
+          <el-button text size="small" @click="startReply(comment.id, comment.display_name)">回复</el-button>
         </div>
         <div class="comment-content">{{ comment.content }}</div>
 
         <div v-if="replyingTo === comment.id" class="reply-form">
-          <el-input v-model="replyContent" type="textarea" :rows="2" placeholder="回复..." />
+          <el-input v-model="replyContent" type="textarea" :rows="2" :placeholder="replyPlaceholder" />
           <div class="comment-form-actions">
             <el-radio-group v-model="commentMode" size="small">
               <el-radio value="real_name">真实姓名</el-radio>
               <el-radio value="nickname">昵称</el-radio>
             </el-radio-group>
             <el-button size="small" type="primary" :loading="postingReply" @click="submitReply(comment.id)">回复</el-button>
-            <el-button size="small" @click="replyingTo = null">取消</el-button>
+            <el-button size="small" @click="cancelReply">取消</el-button>
           </div>
         </div>
 
         <div v-if="comment.replies.length" class="replies">
           <div v-for="reply in comment.replies" :key="reply.id" class="reply-item">
             <span class="comment-author">{{ reply.display_name }}</span>
+            <span v-if="reply.reply_to_display_name" class="reply-to-text">回复 {{ reply.reply_to_display_name }}</span>
             <span class="comment-time">{{ formatTime(reply.created_at) }}</span>
             <el-button v-if="reply.author_id === authStore.currentUser?.account_id" text size="small" type="danger" @click="deleteCommentItem(reply.id)">删除</el-button>
             <ReportButton target-type="comment" :object-id="reply.id" />
+            <el-button text size="small" @click="startReply(reply.id, reply.display_name)">回复</el-button>
             <div class="comment-content">{{ reply.content }}</div>
+            <div v-if="replyingTo === reply.id" class="reply-form nested-reply-form">
+              <el-input v-model="replyContent" type="textarea" :rows="2" :placeholder="replyPlaceholder" />
+              <div class="comment-form-actions">
+                <el-radio-group v-model="commentMode" size="small">
+                  <el-radio value="real_name">真实姓名</el-radio>
+                  <el-radio value="nickname">昵称</el-radio>
+                </el-radio-group>
+                <el-button size="small" type="primary" :loading="postingReply" @click="submitReply(reply.id)">回复</el-button>
+                <el-button size="small" @click="cancelReply">取消</el-button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -82,7 +95,7 @@
 
 <script setup lang="ts">
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import {
@@ -110,6 +123,7 @@ const newComment = ref('')
 const commentMode = ref<'real_name' | 'nickname'>('real_name')
 const postingComment = ref(false)
 const replyingTo = ref<number | null>(null)
+const replyTargetName = ref('')
 const replyContent = ref('')
 const postingReply = ref(false)
 const editing = ref(false)
@@ -117,6 +131,7 @@ const editContent = ref('')
 const saving = ref(false)
 
 const isAuthor = ref(false)
+const replyPlaceholder = computed(() => (replyTargetName.value ? `回复 ${replyTargetName.value}...` : '回复...'))
 
 async function load() {
   loading.value = true
@@ -142,8 +157,15 @@ async function submitComment() {
   }
 }
 
-function startReply(commentId: number) {
+function startReply(commentId: number, targetName: string) {
   replyingTo.value = commentId
+  replyTargetName.value = targetName
+  replyContent.value = ''
+}
+
+function cancelReply() {
+  replyingTo.value = null
+  replyTargetName.value = ''
   replyContent.value = ''
 }
 
@@ -153,6 +175,7 @@ async function submitReply(commentId: number) {
   try {
     await replyToComment(commentId, { content: replyContent.value, display_mode: commentMode.value })
     replyingTo.value = null
+    replyTargetName.value = ''
     comments.value = await fetchComments(post.value!.id)
   } finally {
     postingReply.value = false
@@ -260,6 +283,10 @@ onMounted(() => load())
   font-weight: 600;
   font-size: 14px;
 }
+.reply-to-text {
+  font-size: 13px;
+  color: #6b7280;
+}
 .comment-time {
   font-size: 12px;
   color: #9ca3af;
@@ -280,5 +307,25 @@ onMounted(() => load())
 }
 .reply-form {
   margin: 8px 0 8px 24px;
+}
+.nested-reply-form {
+  margin-left: 0;
+}
+@media (max-width: 768px) {
+  .post-meta,
+  .comment-header,
+  .comment-form-actions {
+    flex-wrap: wrap;
+  }
+  .comment-time {
+    flex: initial;
+  }
+  .replies {
+    margin-left: 8px;
+    padding-left: 10px;
+  }
+  .reply-form {
+    margin-left: 0;
+  }
 }
 </style>

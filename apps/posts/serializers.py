@@ -178,16 +178,19 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_replies(self, obj: Comment) -> list:
         if obj.parent is not None:
             return []
-        replies_qs = obj.replies.filter(status=ContentStatus.PUBLISHED).select_related("author")
+        replies_qs = obj.replies.filter(status=ContentStatus.PUBLISHED).select_related("author", "reply_to", "reply_to__author")
         return CommentReplySerializer(replies_qs, many=True).data
 
 
 class CommentReplySerializer(serializers.ModelSerializer):
-    """A reply to a comment (no further nesting)."""
+    """A reply displayed under a top-level comment."""
 
     display_name = serializers.CharField(read_only=True)
     author_id = serializers.UUIDField(source="author.account_id", read_only=True)
     author_real_name = serializers.CharField(source="author.real_name", read_only=True)
+    parent = serializers.IntegerField(source="parent_id", read_only=True)
+    reply_to = serializers.IntegerField(source="reply_to_id", read_only=True)
+    reply_to_display_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
@@ -198,9 +201,17 @@ class CommentReplySerializer(serializers.ModelSerializer):
             "display_name",
             "content",
             "display_mode",
+            "parent",
+            "reply_to",
+            "reply_to_display_name",
             "created_at",
         ]
-        read_only_fields = ["id", "author_id", "author_real_name", "display_name", "created_at"]
+        read_only_fields = ["id", "author_id", "author_real_name", "display_name", "parent", "reply_to", "reply_to_display_name", "created_at"]
+
+    def get_reply_to_display_name(self, obj: Comment) -> str:
+        if obj.reply_to_id and obj.reply_to:
+            return obj.reply_to.display_name
+        return ""
 
 
 class CommentCreateSerializer(serializers.ModelSerializer):

@@ -161,6 +161,35 @@ class AlbumTests(APITestCase):
         self.assertEqual(detail_resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(detail_resp.data["comments"]), 1)
 
+    def test_photo_comment_reply_to_reply_is_flattened(self):
+        album = Album.objects.create(title="相册", creator=self.user, creator_name_snapshot=self.user.real_name)
+        self.client.force_authenticate(self.user)
+        upload_resp = self.client.post(
+            reverse("album-photo-upload", kwargs={"pk": album.pk}),
+            {"image": make_image_file(), "caption": "说明"},
+            format="multipart",
+        )
+        photo = Photo.objects.get(pk=upload_resp.data["id"])
+        root = PhotoComment.objects.create(photo=photo, author=self.user, content="A 评论", display_mode=DisplayMode.REAL_NAME)
+        first_reply = PhotoComment.objects.create(photo=photo, author=self.other, parent=root, content="B 回复 A", display_mode=DisplayMode.REAL_NAME)
+
+        resp = self.client.post(
+            reverse("photo-comment-reply", kwargs={"pk": first_reply.pk}),
+            {"content": "C 回复 B", "display_mode": DisplayMode.REAL_NAME},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        nested_reply = PhotoComment.objects.get(content="C 回复 B")
+        self.assertEqual(nested_reply.parent, root)
+        self.assertEqual(nested_reply.reply_to, first_reply)
+
+        detail_resp = self.client.get(reverse("photo-detail", kwargs={"pk": photo.pk}))
+        comments = detail_resp.data["comments"]
+        self.assertEqual(len(comments), 1)
+        self.assertEqual(len(comments[0]["replies"]), 2)
+        self.assertEqual(comments[0]["replies"][1]["reply_to"], first_reply.pk)
+        self.assertEqual(comments[0]["replies"][1]["reply_to_display_name"], first_reply.display_name)
+
     def test_owner_can_delete_album(self):
         album = Album.objects.create(title="相册", creator=self.user, creator_name_snapshot=self.user.real_name)
         self.client.force_authenticate(self.user)
