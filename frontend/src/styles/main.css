@@ -1,0 +1,40 @@
+:root {
+  color: #1f2937;
+  background: #f5f7fb;
+  font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.app-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.app-subtitle {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.page-card {
+  max-width: 880px;
+  margin: 48px auto;
+  padding: 32px;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgb(15 23 42 / 8%);
+}

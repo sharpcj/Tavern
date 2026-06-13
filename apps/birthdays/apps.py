@@ -1,0 +1,9 @@
+"""Django app configuration for birthdays."""
+
+from django.apps import AppConfig
+
+
+class BirthdaysConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.birthdays"
+    verbose_name = "Birthdays"
