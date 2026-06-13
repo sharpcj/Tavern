@@ -1,12 +1,10 @@
 <template>
   <section class="page-card">
-    <h1>工程基础设施已就绪</h1>
-    <p>当前阶段只搭建可持续开发骨架，不开放业务功能。</p>
-    <el-alert
-      title="下一阶段将进入账号注册、登录和身份审核模块。"
-      type="success"
-      :closable="false"
-      show-icon
-    />
+    <h1>高中同班同学社区网站</h1>
+    <p>当前已进入账号注册与身份审核阶段。注册申请提交后，需要管理员审核通过后才算正式注册成功。</p>
+    <div class="actions">
+      <el-button type="primary" @click="$router.push('/register')">注册账号</el-button>
+      <el-button @click="$router.push('/login')">登录查看审核状态</el-button>
+    </div>
   </section>
 </template>

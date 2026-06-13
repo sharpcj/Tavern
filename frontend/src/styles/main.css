@@ -21,13 +21,15 @@ body {
 }
 
 .app-title {
+  cursor: pointer;
   font-size: 18px;
   font-weight: 700;
 }
 
-.app-subtitle {
-  color: #6b7280;
-  font-size: 14px;
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .page-card {
@@ -37,4 +39,23 @@ body {
   border-radius: 16px;
   background: #ffffff;
   box-shadow: 0 16px 40px rgb(15 23 42 / 8%);
+}
+
+.auth-card {
+  max-width: 680px;
+}
+
+.muted {
+  color: #6b7280;
+  line-height: 1.7;
+}
+
+.form-tip {
+  margin: 16px 0;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
 }
