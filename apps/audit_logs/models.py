@@ -16,6 +16,14 @@ class AuditAction(models.TextChoices):
     USER_WARNED = "user_warned", "警告用户"
     USER_RESTRICTED = "user_restricted", "限制用户"
     USER_BANNED = "user_banned", "封禁用户"
+    USER_REVIEWED = "user_reviewed", "审核用户"
+    ROLE_CHANGED = "role_changed", "角色变更"
+    ACCOUNT_STATUS_CHANGED = "account_status_changed", "账号状态变更"
+    ANNOUNCEMENT_CREATED = "announcement_created", "发布公告"
+    ANNOUNCEMENT_UPDATED = "announcement_updated", "编辑公告"
+    ANNOUNCEMENT_DELETED = "announcement_deleted", "删除公告"
+    ACTIVITY_STATUS_CHANGED = "activity_status_changed", "活动状态变更"
+    ACTIVITY_DELETED = "activity_deleted", "删除活动"
 
 
 class AuditLog(models.Model):

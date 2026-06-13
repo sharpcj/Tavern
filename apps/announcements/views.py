@@ -11,6 +11,8 @@ from rest_framework.views import APIView
 
 from apps.common.enums import ContentStatus
 from apps.common.permissions import IsApprovedClassmate, IsModeratorOrAbove
+from apps.audit_logs.models import AuditAction
+from apps.audit_logs.services import write_audit_log
 
 from .models import Announcement, AnnouncementReadReceipt
 from .serializers import AnnouncementDetailSerializer, AnnouncementListSerializer, AnnouncementWriteSerializer
@@ -50,6 +52,7 @@ class AnnouncementListCreateView(generics.ListCreateAPIView):
         write_serializer = self.get_serializer(data=request.data)
         write_serializer.is_valid(raise_exception=True)
         announcement = write_serializer.save()
+        write_audit_log(actor=request.user, action=AuditAction.ANNOUNCEMENT_CREATED, target=announcement, reason=announcement.title)
         return Response(
             AnnouncementDetailSerializer(announcement, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
@@ -98,12 +101,14 @@ class AnnouncementDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer = AnnouncementWriteSerializer(announcement, data=request.data, partial=True, context={"request": request})
         serializer.is_valid(raise_exception=True)
         announcement = serializer.save()
+        write_audit_log(actor=request.user, action=AuditAction.ANNOUNCEMENT_UPDATED, target=announcement, reason=announcement.title)
         return Response(AnnouncementDetailSerializer(announcement, context={"request": request}).data)
 
     @extend_schema(tags=["announcements"])
     def delete(self, request, *args, **kwargs):
         announcement = self.get_object()
         announcement.soft_delete(request.user)
+        write_audit_log(actor=request.user, action=AuditAction.ANNOUNCEMENT_DELETED, target=announcement, reason=announcement.title)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

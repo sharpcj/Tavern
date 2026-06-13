@@ -53,7 +53,7 @@ class AdminUserUpdateView(APIView):
             user.save(update_fields=["role", "updated_at"])
             write_audit_log(
                 actor=request.user,
-                action=AuditAction.USER_WARNED,
+                action=AuditAction.ROLE_CHANGED,
                 target=user,
                 reason=f"角色变更: {old_role} → {data['role']}",
                 metadata={"old_role": old_role, "new_role": data["role"]},
@@ -64,11 +64,11 @@ class AdminUserUpdateView(APIView):
             user.account_status = data["account_status"]
             user.save(update_fields=["account_status", "updated_at"])
             action_map = {
-                AccountStatus.NORMAL: AuditAction.USER_WARNED,
+                AccountStatus.NORMAL: AuditAction.ACCOUNT_STATUS_CHANGED,
                 AccountStatus.RESTRICTED: AuditAction.USER_RESTRICTED,
                 AccountStatus.BANNED: AuditAction.USER_BANNED,
             }
-            action = action_map.get(data["account_status"], AuditAction.USER_WARNED)
+            action = action_map.get(data["account_status"], AuditAction.ACCOUNT_STATUS_CHANGED)
             write_audit_log(
                 actor=request.user,
                 action=action,
@@ -121,7 +121,7 @@ class AdminReviewActionView(APIView):
 
         write_audit_log(
             actor=request.user,
-            action=AuditAction.REPORT_HANDLED,
+            action=AuditAction.USER_REVIEWED,
             target=user,
             reason=f"审核操作: {action} - {reason}",
             metadata={"action": action},

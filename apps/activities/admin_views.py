@@ -49,7 +49,7 @@ class AdminActivityStatusUpdateView(APIView):
         activity.save(update_fields=["status", "updated_at"])
         write_audit_log(
             actor=request.user,
-            action=AuditAction.REPORT_HANDLED,
+            action=AuditAction.ACTIVITY_STATUS_CHANGED,
             target=activity,
             reason=f"活动状态变更: {old_status} → {new_status}",
             metadata={"old_status": old_status, "new_status": new_status},
@@ -66,5 +66,5 @@ class AdminActivityDeleteView(APIView):
         reason = request.data.get("reason", "管理员删除")
         activity.status = ActivityStatus.CANCELLED
         activity.save(update_fields=["status", "updated_at"])
-        write_audit_log(actor=request.user, action=AuditAction.CONTENT_DELETED, target=activity, reason=f"管理员删除活动: {reason}")
+        write_audit_log(actor=request.user, action=AuditAction.ACTIVITY_DELETED, target=activity, reason=f"管理员删除活动: {reason}")
         return Response({"detail": "活动已取消"})
