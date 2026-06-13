@@ -145,6 +145,8 @@ SPECTACULAR_SETTINGS = {
         "ActivityStatusEnum": "apps.activities.models.ActivityStatus",
         "ActivityTypeEnum": "apps.activities.models.ActivityType",
         "ContentStatusEnum": "apps.common.enums.ContentStatus",
+        "PostCategoryEnum": "apps.posts.models.PostCategory",
+        "AlbumCategoryEnum": "apps.albums.models.AlbumCategory",
     },
 }
 

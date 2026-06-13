@@ -13,6 +13,10 @@ import ActivityDetailPage from '@/pages/ActivityDetailPage.vue'
 import AnnouncementListPage from '@/pages/AnnouncementListPage.vue'
 import AnnouncementDetailPage from '@/pages/AnnouncementDetailPage.vue'
 import AnnouncementCreatePage from '@/pages/AnnouncementCreatePage.vue'
+import AlbumListPage from '@/pages/AlbumListPage.vue'
+import AlbumCreatePage from '@/pages/AlbumCreatePage.vue'
+import AlbumDetailPage from '@/pages/AlbumDetailPage.vue'
+import PhotoDetailPage from '@/pages/PhotoDetailPage.vue'
 import PostListPage from '@/pages/PostListPage.vue'
 import ProfileEditPage from '@/pages/ProfileEditPage.vue'
 import RegisterPage from '@/pages/RegisterPage.vue'
@@ -122,6 +126,30 @@ const router = createRouter({
           path: 'announcements/:id',
           name: 'announcement-detail',
           component: AnnouncementDetailPage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
+        {
+          path: 'albums',
+          name: 'album-list',
+          component: AlbumListPage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
+        {
+          path: 'albums/create',
+          name: 'album-create',
+          component: AlbumCreatePage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
+        {
+          path: 'albums/:id',
+          name: 'album-detail',
+          component: AlbumDetailPage,
+          meta: { requiresAuth: true, requiresApproved: true },
+        },
+        {
+          path: 'photos/:id',
+          name: 'photo-detail',
+          component: PhotoDetailPage,
           meta: { requiresAuth: true, requiresApproved: true },
         },
       ],
