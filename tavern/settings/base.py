@@ -14,6 +14,7 @@ env = environ.Env(
     DEBUG=(bool, False),
     DJANGO_ALLOWED_HOSTS=(list, []),
     CORS_ALLOWED_ORIGINS=(list, []),
+    ENABLE_API_DOCS=(bool, False),
 )
 
 # Load a local env file when present. Real deployment should inject environment variables.
@@ -22,7 +23,7 @@ if env_file.exists():
     environ.Env.read_env(env_file)
 
 SECRET_KEY = env("DJANGO_SECRET_KEY", default="django-insecure-dev-only-change-me")
-DEBUG = env("DEBUG")
+DEBUG = env.bool("DEBUG")
 ALLOWED_HOSTS = env("DJANGO_ALLOWED_HOSTS")
 
 DJANGO_APPS = [
@@ -112,6 +113,7 @@ AUTH_USER_MODEL = "accounts.User"
 
 CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+ENABLE_API_DOCS = env.bool("ENABLE_API_DOCS", default=DEBUG)
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -124,6 +126,21 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardResultsSetPagination",
     "PAGE_SIZE": env.int("API_DEFAULT_PAGE_SIZE", default=20),
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": env("THROTTLE_ANON_RATE", default="60/min"),
+        "user": env("THROTTLE_USER_RATE", default="600/min"),
+        "auth": env("THROTTLE_AUTH_RATE", default="10/min"),
+        "register": env("THROTTLE_REGISTER_RATE", default="5/hour"),
+        "upload": env("THROTTLE_UPLOAD_RATE", default="30/hour"),
+        "comment": env("THROTTLE_COMMENT_RATE", default="120/hour"),
+        "report": env("THROTTLE_REPORT_RATE", default="30/hour"),
+        "sse": env("THROTTLE_SSE_RATE", default="20/min"),
+    },
 }
 
 SIMPLE_JWT = {

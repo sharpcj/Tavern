@@ -7,6 +7,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.common.permissions import IsSuperAdmin
 
@@ -27,6 +28,7 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = [permissions.AllowAny]
     serializer_class = RegisterSerializer
+    throttle_scope = "register"
 
     @extend_schema(tags=["auth"])
     def post(self, request, *args, **kwargs):
@@ -41,6 +43,18 @@ class RegisterView(generics.CreateAPIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class TavernTokenObtainPairView(TokenObtainPairView):
+    """JWT login endpoint with a stricter auth throttle scope."""
+
+    throttle_scope = "auth"
+
+
+class TavernTokenRefreshView(TokenRefreshView):
+    """JWT refresh endpoint with the same auth throttle scope."""
+
+    throttle_scope = "auth"
 
 
 class CurrentUserView(APIView):

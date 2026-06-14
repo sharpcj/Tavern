@@ -146,6 +146,7 @@ def _fetch_realtime_event_dicts(user_id: int, last_id: int) -> list[dict]:
 class RealtimeEventSinceView(APIView):
     permission_classes = [IsApprovedClassmate]
     serializer_class = RealtimeEventSerializer
+    throttle_scope = "sse"
 
     @extend_schema(
         tags=["realtime-events"],
@@ -178,8 +179,12 @@ async def realtime_event_stream_view(request):
     async def event_stream():
         last_id = cursor
         heartbeat_counter = 0
+        started_at = asyncio.get_running_loop().time()
         yield ": connected\n\n"
         while True:
+            if asyncio.get_running_loop().time() - started_at >= 600:
+                yield ": reconnect\n\n"
+                break
             events = await _fetch_realtime_event_dicts(user_id, last_id)
             if events:
                 for event in events:

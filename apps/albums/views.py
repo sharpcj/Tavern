@@ -113,6 +113,7 @@ class AlbumDetailView(generics.RetrieveUpdateDestroyAPIView):
 class PhotoUploadView(APIView):
     permission_classes = [IsApprovedClassmate]
     serializer_class = PhotoUploadSerializer
+    throttle_scope = "upload"
 
     @extend_schema(tags=["albums"], request=PhotoUploadSerializer, responses=PhotoDetailSerializer)
     def post(self, request, pk: int):
@@ -157,6 +158,7 @@ class PhotoDeleteView(APIView):
 class PhotoCommentCreateView(APIView):
     permission_classes = [IsApprovedClassmate]
     serializer_class = PhotoCommentCreateSerializer
+    throttle_scope = "comment"
 
     @extend_schema(tags=["albums"], request=PhotoCommentCreateSerializer, responses=PhotoCommentSerializer)
     def post(self, request, pk: int):
@@ -178,6 +180,7 @@ class PhotoCommentReplyView(APIView):
 
     permission_classes = [IsApprovedClassmate]
     serializer_class = PhotoCommentCreateSerializer
+    throttle_scope = "comment"
 
     @extend_schema(tags=["albums"], request=PhotoCommentCreateSerializer, responses=PhotoCommentSerializer)
     def post(self, request, pk: int):

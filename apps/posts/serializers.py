@@ -10,6 +10,7 @@ from rest_framework import serializers
 
 from apps.comments.models import Comment
 from apps.common.enums import ContentStatus, DisplayMode
+from apps.common.media_urls import sign_stored_media_url
 from apps.common.models import Media
 from apps.common.validators import validate_file_size, validate_image_type
 from apps.posts.models import Post
@@ -24,8 +25,8 @@ class PostImageUrlMixin:
         request = self.context.get("request")
         result = []
         for url in obj.images or []:
-            if isinstance(url, str) and url.startswith("/") and request:
-                result.append(request.build_absolute_uri(url))
+            if isinstance(url, str):
+                result.append(sign_stored_media_url(url, request=request))
             else:
                 result.append(url)
         return result

@@ -45,7 +45,7 @@ M15 是第一版最后一个模块，目标是将此前完成的 M01-M14 所有�
 flowchart LR
     Browser[浏览器] --> Nginx[Nginx :80/:443]
     Nginx --> Static[静态文件 /static/]
-    Nginx --> Media[媒体文件 /media/]
+    Nginx --> MediaAPI[签名媒体接口 /api/v1/media/...]
     Nginx --> Gunicorn[Gunicorn :8000]
     Gunicorn --> Django[Django App]
     Django --> MySQL[(MySQL :3306)]
@@ -74,7 +74,7 @@ deploy/nginx/conf.d/tavern.conf
 ## 关键设计决策
 
 1. Gunicorn 使用 4 个 worker，绑定 0.0.0.0:8000
-2. Nginx 处理静态文件 /static/ 和媒体文件 /media/，其余代理到 Gunicorn
+2. Nginx 处理静态文件 /static/；上传媒体文件不再公开直出，必须通过 Django 签名媒体接口访问
 3. MySQL 和 Redis 不暴露端口到宿主机，仅内部网络通信
 4. 使用 Docker 命名卷持久化 MySQL 数据和媒体文件
 5. 环境变量通过 .env.prod 注入，不写入镜像
@@ -126,6 +126,9 @@ deploy/.env.prod.example
 - MYSQL_DATABASE / MYSQL_USER / MYSQL_PASSWORD / MYSQL_ROOT_PASSWORD
 - REDIS_URL
 - JWT_ACCESS_TOKEN_MINUTES / JWT_REFRESH_TOKEN_DAYS
+- ENABLE_API_DOCS
+- SECURE_SSL_REDIRECT / SECURE_HSTS_SECONDS / SECURE_HSTS_INCLUDE_SUBDOMAINS / SECURE_HSTS_PRELOAD
+- THROTTLE_* 系列限流配置
 
 ## 生产 Django 配置
 
@@ -142,6 +145,9 @@ tavern/settings/production.py
 - SECURE_SSL_REDIRECT=True
 - SESSION_COOKIE_SECURE=True
 - CSRF_COOKIE_SECURE=True
+- SECURE_HSTS_SECONDS=31536000
+- 生产默认 ENABLE_API_DOCS=False，关闭 /api/docs/ 与 /api/schema/
+- 登录、注册、上传、评论、举报、SSE 等接口启用 DRF scoped throttle
 
 ## Nginx 安全响应头
 
@@ -149,7 +155,11 @@ tavern/settings/production.py
 - X-Frame-Options: DENY
 - X-XSS-Protection: 1; mode=block
 - Referrer-Policy: strict-origin-when-cross-origin
-- 上传大小限制：client_max_body_size 10m
+- Strict-Transport-Security
+- Content-Security-Policy
+- 上传大小限制：client_max_body_size 12m
+- /media/ 直接访问返回 404，媒体文件通过 /api/v1/media/<id>/file/?token=... 短期签名 URL 访问
+- /api/v1/events/stream/ 关闭 proxy buffering，并限制单 IP SSE 连接数
 
 # 七、上线验收清单
 
@@ -166,8 +176,8 @@ tavern/settings/production.py
 
 # 八、边界决策
 
-1. HTTPS 证书：第一版使用自签名证书或 Let's Encrypt，不强制要求商业 CA 证书。Nginx 配置预留 443 端口和 SSL 配置块，实际证书路径通过环境变量注入。
-2. 对象存储：第一版使用本地 media/ 目录，不做 S3/OSS 迁移。备份脚本覆盖本地文件即可。
+1. HTTPS 证书：生产 Nginx 默认强制 HTTPS，80 端口只做跳转。证书文件路径固定为 `/etc/nginx/ssl/cert.pem` 和 `/etc/nginx/ssl/key.pem`，可使用 Let's Encrypt 或其他 CA 证书。
+2. 对象存储：第一版使用本地 media/ 目录，不做 S3/OSS 迁移。备份脚本覆盖本地文件即可；公网访问不直接暴露 /media/，由 Django 生成短期签名 URL。
 3. Celery：第一版不启用 Celery，通知在请求内同步创建。后续需要异步任务时再引入。
 4. 监控和日志：第一版使用 Docker 日志驱动和 Django 日志，不引入 Prometheus/Grafana/ELK。
 5. CI/CD：第一版不做 CI/CD 流水线，手动执行部署和验证命令。

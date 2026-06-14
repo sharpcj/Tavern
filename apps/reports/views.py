@@ -19,6 +19,7 @@ from .serializers import ReportCreateSerializer, ReportHandleSerializer, ReportS
 class ReportCreateView(APIView):
     permission_classes = [IsApprovedClassmate]
     serializer_class = ReportCreateSerializer
+    throttle_scope = "report"
 
     @extend_schema(tags=["reports"], request=ReportCreateSerializer, responses=ReportSerializer)
     def post(self, request):

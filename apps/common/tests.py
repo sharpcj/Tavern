@@ -2,15 +2,29 @@
 
 from __future__ import annotations
 
+import tempfile
+
+from asgiref.sync import async_to_sync
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.accounts.models import AccountStatus, ReviewStatus
+from apps.common.media_urls import build_signed_media_url
+from apps.common.models import Media
 
 User = get_user_model()
+
+
+async def _consume_async_stream(stream) -> bytes:
+    chunks = []
+    async for chunk in stream:
+        chunks.append(chunk)
+    return b"".join(chunks)
+
 
 # A simple view protected by IsApprovedClassmate for testing.
 # We reuse the existing auth/me/ endpoint but override its permission_classes
@@ -133,3 +147,41 @@ class IsApprovedClassmateTests(APITestCase):
         resp = self.client.get(reverse("auth-me"))
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(resp.data["code"], "NOT_AUTHENTICATED")
+
+
+class SignedMediaFileTests(APITestCase):
+    def test_signed_media_url_serves_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir, override_settings(MEDIA_ROOT=tmpdir):
+            user = User.objects.create_user(
+                email="media@example.com", password="Pass1234!",
+                real_name="媒体用户", high_school="一中", high_school_class="一班",
+            )
+            media = Media.objects.create(
+                uploader=user,
+                file=SimpleUploadedFile("hello.txt", b"hello", content_type="text/plain"),
+                original_name="hello.txt",
+                content_type="text/plain",
+                size=5,
+            )
+            signed_url = build_signed_media_url(media)
+            self.assertTrue(signed_url.startswith("/api/v1/media/"))
+            resp = self.client.get(signed_url)
+            self.assertEqual(resp.status_code, status.HTTP_200_OK)
+            self.assertTrue(resp.is_async)
+            self.assertEqual(async_to_sync(_consume_async_stream)(resp.streaming_content), b"hello")
+
+    def test_signed_media_url_rejects_bad_token(self):
+        with tempfile.TemporaryDirectory() as tmpdir, override_settings(MEDIA_ROOT=tmpdir):
+            user = User.objects.create_user(
+                email="media2@example.com", password="Pass1234!",
+                real_name="媒体用户", high_school="一中", high_school_class="一班",
+            )
+            media = Media.objects.create(
+                uploader=user,
+                file=SimpleUploadedFile("hello.txt", b"hello", content_type="text/plain"),
+                original_name="hello.txt",
+                content_type="text/plain",
+                size=5,
+            )
+            resp = self.client.get(f"/api/v1/media/{media.pk}/file/?token=bad")
+            self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)

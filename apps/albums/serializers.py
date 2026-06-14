@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from apps.common.enums import ContentStatus, DisplayMode
+from apps.common.media_urls import build_signed_media_url
 from apps.common.models import Media
 from apps.common.validators import validate_file_size, validate_image_type
 
@@ -87,10 +88,7 @@ class PhotoListSerializer(serializers.ModelSerializer):
 
     def get_image_url(self, obj: Photo) -> str:
         request = self.context.get("request")
-        url = obj.media.file.url
-        if request:
-            return request.build_absolute_uri(url)
-        return url
+        return build_signed_media_url(obj.media, request=request)
 
     def get_comment_count(self, obj: Photo) -> int:
         return obj.comments.filter(status=ContentStatus.PUBLISHED).count()

@@ -150,6 +150,7 @@ class CommentListView(generics.ListCreateAPIView):
     """List comments for a post, or create a top-level comment."""
 
     permission_classes = [IsApprovedClassmate]
+    throttle_scope = "comment"
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -193,6 +194,7 @@ class CommentReplyView(APIView):
     """Create a reply to any existing comment while keeping two-level display."""
 
     permission_classes = [IsApprovedClassmate]
+    throttle_scope = "comment"
 
     @extend_schema(request=CommentCreateSerializer, responses=CommentSerializer, tags=["comments"])
     def post(self, request, pk: int):

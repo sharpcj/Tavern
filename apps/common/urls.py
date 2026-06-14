@@ -2,7 +2,7 @@
 
 from django.urls import path
 
-from .views import HealthCheckView
+from .views import HealthCheckView, SignedMediaFileView
 from .admin_views import (
     AdminAlbumHideView,
     AdminAlbumListView,
@@ -18,6 +18,7 @@ from .admin_views import (
 
 urlpatterns = [
     path("health/", HealthCheckView.as_view(), name="health-check"),
+    path("media/<int:pk>/file/", SignedMediaFileView.as_view(), name="signed-media-file"),
     path("admin/contents/posts/", AdminPostListView.as_view(), name="admin-post-list"),
     path("admin/contents/posts/<int:pk>/hide/", AdminPostHideView.as_view(), name="admin-post-hide"),
     path("admin/contents/posts/<int:pk>/delete/", AdminPostDeleteView.as_view(), name="admin-post-delete"),
