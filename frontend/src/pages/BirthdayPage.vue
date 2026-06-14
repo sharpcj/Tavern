@@ -8,7 +8,7 @@
       <el-empty v-if="!loadingBirthdays && birthdays.length === 0" description="本月暂无同学开启生日展示" />
       <div class="birthday-grid">
         <div v-for="item in birthdays" :key="item.account_id" class="birthday-card" :class="{ selected: selectedRecipient === item.account_id }" @click="selectRecipient(item.account_id)">
-          <el-avatar :src="item.avatar_url" :size="48">{{ item.real_name.slice(0, 1) }}</el-avatar>
+          <UserAvatar :src="item.avatar_url" :size="48" />
           <div>
             <strong>{{ item.real_name }}</strong>
             <span v-if="item.nickname" class="muted">（{{ item.nickname }}）</span>
@@ -60,8 +60,9 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
+
+import UserAvatar from '@/components/UserAvatar.vue'
 import { createBirthdayWish, fetchBirthdayWishes, fetchCurrentMonthBirthdays, type BirthdayClassmate, type BirthdayWish } from '@/api/birthdays'
-import ReportButton from '@/components/ReportButton.vue'
 
 const loadingBirthdays = ref(false)
 const loadingWishes = ref(false)

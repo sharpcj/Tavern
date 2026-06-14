@@ -2,16 +2,31 @@
 
 from __future__ import annotations
 
+import tempfile
+from io import BytesIO
+
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.urls import reverse
+from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.accounts.models import AccountStatus, ReviewStatus
+from apps.common.models import Media
 
 from .models import ContactVisibility, Profile
 
 User = get_user_model()
+
+
+def make_image_file(name: str = "avatar.png", size: tuple[int, int] = (64, 64)) -> SimpleUploadedFile:
+    buffer = BytesIO()
+    image = Image.new("RGB", size, color="blue")
+    image.save(buffer, format="PNG")
+    buffer.seek(0)
+    return SimpleUploadedFile(name, buffer.read(), content_type="image/png")
 
 
 class ProfileTests(APITestCase):
@@ -55,6 +70,31 @@ class ProfileTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data["city"], "北京")
         self.assertEqual(resp.data["birthday_month"], 3)
+
+    def test_upload_avatar_updates_profile_avatar_url(self):
+        self.client.force_authenticate(self.user)
+        with tempfile.TemporaryDirectory() as tmpdir, override_settings(MEDIA_ROOT=tmpdir):
+            resp = self.client.patch(
+                reverse("my-profile"),
+                {"avatar": make_image_file()},
+                format="multipart",
+            )
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.user.profile.refresh_from_db()
+        self.assertTrue(self.user.profile.avatar_url)
+        self.assertTrue(Media.objects.filter(uploader=self.user, original_name="avatar.png").exists())
+
+    def test_reject_oversized_avatar_dimensions(self):
+        self.client.force_authenticate(self.user)
+        with tempfile.TemporaryDirectory() as tmpdir, override_settings(MEDIA_ROOT=tmpdir):
+            resp = self.client.patch(
+                reverse("my-profile"),
+                {"avatar": make_image_file(size=(1200, 1200))},
+                format="multipart",
+            )
+
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_birthday_month_validation(self):
         self.client.force_authenticate(self.user)

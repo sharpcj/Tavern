@@ -37,6 +37,10 @@ export interface ClassmateDetail extends ClassmateListItem {
   wechat: string | null
 }
 
+export type ProfileUpdatePayload = Partial<ProfileData> & {
+  avatar?: File | null
+}
+
 export interface PaginatedResponse<T> {
   count: number
   next: string | null
@@ -49,7 +53,24 @@ export async function fetchMyProfile(): Promise<ProfileData> {
   return resp.data
 }
 
-export async function updateMyProfile(data: Partial<ProfileData>): Promise<ProfileData> {
+export async function updateMyProfile(data: ProfileUpdatePayload): Promise<ProfileData> {
+  if (data.avatar) {
+    const formData = new FormData()
+    Object.entries(data).forEach(([key, value]) => {
+      if (value === undefined || value === null) return
+      if (key === 'avatar') {
+        formData.append('avatar', value as File)
+        return
+      }
+      if (Array.isArray(value)) {
+        value.forEach(item => formData.append(key, String(item)))
+        return
+      }
+      formData.append(key, String(value))
+    })
+    const resp = await apiClient.patch<ProfileData>('/v1/me/profile/', formData)
+    return resp.data
+  }
   const resp = await apiClient.patch<ProfileData>('/v1/me/profile/', data)
   return resp.data
 }

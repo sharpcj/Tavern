@@ -3,7 +3,7 @@
     <el-skeleton v-if="loading" :rows="6" animated />
     <template v-else-if="classmate">
       <div class="detail-header">
-        <el-avatar :src="classmate.avatar_url" :size="64">{{ classmate.real_name[0] }}</el-avatar>
+        <UserAvatar :src="classmate.avatar_url" :size="64" />
         <div class="detail-title">
           <h1>{{ classmate.real_name }}<span v-if="classmate.nickname" class="nickname">（{{ classmate.nickname }}）</span></h1>
           <p class="muted">{{ classmate.city || '未填写城市' }} · {{ classmate.occupation || '未填写职业' }}</p>
@@ -42,6 +42,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
+import UserAvatar from '@/components/UserAvatar.vue'
 import { fetchClassmateDetail, type ClassmateDetail } from '@/api/profile'
 
 const route = useRoute()

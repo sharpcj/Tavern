@@ -22,9 +22,7 @@
           <el-button v-if="!authStore.isReviewApproved" text @click="$router.push('/review-status')">审核状态</el-button>
           <el-dropdown trigger="click" @command="handleUserMenuCommand">
             <span class="user-avatar-trigger">
-              <el-avatar :size="32" :src="profileAvatarUrl">
-                {{ avatarText }}
-              </el-avatar>
+              <UserAvatar :src="profileAvatarUrl" :size="32" />
             </span>
             <template #dropdown>
               <el-dropdown-menu>
@@ -37,9 +35,7 @@
       </div>
 
       <div class="mobile-nav">
-        <el-avatar v-if="authStore.isAuthenticated" :size="30" :src="profileAvatarUrl">
-          {{ avatarText }}
-        </el-avatar>
+        <UserAvatar v-if="authStore.isAuthenticated" :src="profileAvatarUrl" :size="30" />
         <el-button text class="mobile-menu-button" @click="mobileMenuVisible = true">菜单</el-button>
       </div>
     </el-header>
@@ -80,9 +76,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
+import UserAvatar from '@/components/UserAvatar.vue'
 import { fetchUnreadNotificationCount } from '@/api/notifications'
 import { fetchMyProfile } from '@/api/profile'
 import { startRealtimeEvents, stopRealtimeEvents, useRealtimeEvent } from '@/composables/useRealtimeEvents'
@@ -94,11 +91,6 @@ const profileAvatarUrl = ref('')
 const profileNickname = ref('')
 const mobileMenuVisible = ref(false)
 const unreadNotificationCount = ref(0)
-
-const avatarText = computed(() => {
-  const name = profileNickname.value || authStore.currentUser?.nickname || authStore.currentUser?.real_name || authStore.currentUser?.email || '我'
-  return name.slice(0, 1)
-})
 
 async function loadProfileAvatar() {
   if (!authStore.isAuthenticated) {

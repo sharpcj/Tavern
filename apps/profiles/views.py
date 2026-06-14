@@ -30,12 +30,17 @@ class MyProfileView(APIView):
     @extend_schema(responses=ProfileSerializer, tags=["profile"])
     def get(self, request):
         profile, _ = Profile.objects.get_or_create(user=request.user)
-        return Response(ProfileSerializer(profile).data)
+        return Response(ProfileSerializer(profile, context={"request": request}).data)
 
     @extend_schema(request=ProfileSerializer, responses=ProfileSerializer, tags=["profile"])
     def patch(self, request):
         profile, _ = Profile.objects.get_or_create(user=request.user)
-        serializer = ProfileSerializer(profile, data=request.data, partial=True)
+        serializer = ProfileSerializer(
+            profile,
+            data=request.data,
+            partial=True,
+            context={"request": request, "avatar": request.FILES.get("avatar")},
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
@@ -100,5 +105,5 @@ class ClassmateDetailView(APIView):
             account_id=account_id,
         )
         profile, _ = Profile.objects.get_or_create(user=user)
-        serializer = ClassmateDetailSerializer(profile, viewer=request.user)
+        serializer = ClassmateDetailSerializer(profile, viewer=request.user, context={"request": request})
         return Response(serializer.data)

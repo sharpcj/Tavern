@@ -20,7 +20,7 @@
     <el-table :data="classmates" stripe v-loading="loading" @row-click="goDetail" style="cursor:pointer">
       <el-table-column label="头像" width="70">
         <template #default="{ row }">
-          <el-avatar :src="row.avatar_url" :size="40">{{ row.real_name[0] }}</el-avatar>
+          <UserAvatar :src="row.avatar_url" :size="40" />
         </template>
       </el-table-column>
       <el-table-column prop="real_name" label="姓名" width="120" />
@@ -50,6 +50,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+import UserAvatar from '@/components/UserAvatar.vue'
 import { fetchClassmates, type ClassmateListItem } from '@/api/profile'
 
 const router = useRouter()

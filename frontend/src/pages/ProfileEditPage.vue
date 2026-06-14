@@ -17,8 +17,14 @@
         <div class="field-tip">发动态、评论时默认显示的名称，可随时修改。</div>
       </el-form-item>
 
-      <el-form-item label="头像链接">
-        <el-input v-model="form.avatar_url" placeholder="https://example.com/avatar.jpg" />
+      <el-form-item label="头像">
+        <div class="avatar-upload-row">
+          <UserAvatar :src="avatarPreviewUrl || form.avatar_url" :size="72" />
+          <div class="avatar-upload-actions">
+            <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" @change="onAvatarChange" />
+            <div class="field-tip">仅支持 JPG、PNG、GIF、WebP，文件不超过 512 KB，宽高不超过 1024 像素。</div>
+          </div>
+        </div>
       </el-form-item>
       <el-row :gutter="16">
         <el-col :span="12">
@@ -107,15 +113,21 @@
 <script setup lang="ts">
 import type { FormInstance } from 'element-plus'
 import { ElMessage } from 'element-plus'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 
-import { fetchClassmates, fetchMyProfile, updateMyProfile, type ClassmateListItem, type ProfileData } from '@/api/profile'
+import UserAvatar from '@/components/UserAvatar.vue'
+import { fetchClassmates, fetchMyProfile, updateMyProfile, type ClassmateListItem, type ProfileData, type ProfileUpdatePayload } from '@/api/profile'
 
 const formRef = ref<FormInstance>()
 const loading = ref(true)
 const submitting = ref(false)
 const searchLoading = ref(false)
 const searchResults = ref<ClassmateListItem[]>([])
+const selectedAvatar = ref<File | null>(null)
+const avatarPreviewUrl = ref('')
+
+const allowedAvatarTypes = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
+const maxAvatarSize = 512 * 1024
 
 const form = reactive<ProfileData>({
   real_name: '',
@@ -157,12 +169,36 @@ async function searchClassmates(query: string) {
   }
 }
 
+function clearAvatarPreview() {
+  if (avatarPreviewUrl.value) {
+    URL.revokeObjectURL(avatarPreviewUrl.value)
+    avatarPreviewUrl.value = ''
+  }
+}
+
+function onAvatarChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  if (!allowedAvatarTypes.has(file.type)) {
+    ElMessage.warning('请选择 JPG、PNG、GIF 或 WebP 图片')
+    return
+  }
+  if (file.size > maxAvatarSize) {
+    ElMessage.warning('头像图片不能超过 512 KB')
+    return
+  }
+  selectedAvatar.value = file
+  clearAvatarPreview()
+  avatarPreviewUrl.value = URL.createObjectURL(file)
+}
+
 async function submit() {
   submitting.value = true
   try {
-    const payload: Partial<ProfileData> = {
+    const payload: ProfileUpdatePayload = {
       nickname: form.nickname,
-      avatar_url: form.avatar_url,
       city: form.city,
       occupation: form.occupation,
       bio: form.bio,
@@ -174,8 +210,12 @@ async function submit() {
       wechat_visibility: form.wechat_visibility,
       email_visibility: form.email_visibility,
       contact_visible_to: form.contact_visible_to,
+      avatar: selectedAvatar.value,
     }
-    await updateMyProfile(payload)
+    const updated = await updateMyProfile(payload)
+    Object.assign(form, updated)
+    selectedAvatar.value = null
+    clearAvatarPreview()
     ElMessage.success('资料已保存')
   } catch {
     ElMessage.error('保存失败，请重试')
@@ -194,8 +234,18 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+onBeforeUnmount(() => clearAvatarPreview())
 </script>
 
 <style scoped>
 .field-tip { margin-top: 6px; color: #6b7280; font-size: 13px; }
+.avatar-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.avatar-upload-actions {
+  flex: 1;
+}
 </style>
