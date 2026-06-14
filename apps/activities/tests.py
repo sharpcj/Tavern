@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from apps.accounts.models import ReviewStatus
+from apps.accounts.models import AccountStatus, ReviewStatus
+from apps.notifications.models import Notification, NotificationType, RealtimeEvent, RealtimeEventType
 from .models import Activity, ActivityStatus, ActivityType, ChainRecord, Signup, VoteOption, VoteRecord
 
 User = get_user_model()
@@ -26,13 +30,76 @@ class ActivityTests(APITestCase):
 
     def test_create_gathering(self):
         self.client.force_authenticate(self.user)
+        start_time = timezone.now() + timedelta(days=7)
+        deadline = start_time + timedelta(hours=1)
         resp = self.client.post(reverse("activity-list"), {
             "title": "周末聚餐", "activity_type": "gathering",
             "description": "一起吃饭", "location": "北京",
-            "start_time": "2026-07-01T18:00:00Z",
+            "start_time": start_time.isoformat(),
+            "deadline": deadline.isoformat(),
         }, format="json")
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Activity.objects.count(), 1)
+
+    def test_create_gathering_requires_deadline_after_start_time(self):
+        self.client.force_authenticate(self.user)
+        start_time = timezone.now() + timedelta(days=7)
+        deadline = start_time - timedelta(hours=1)
+        resp = self.client.post(reverse("activity-list"), {
+            "title": "周末聚餐", "activity_type": "gathering",
+            "description": "一起吃饭", "location": "北京",
+            "start_time": start_time.isoformat(),
+            "deadline": deadline.isoformat(),
+        }, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("deadline", resp.data)
+
+    def test_create_gathering_requires_start_time_and_deadline(self):
+        self.client.force_authenticate(self.user)
+        resp = self.client.post(reverse("activity-list"), {
+            "title": "周末聚餐", "activity_type": "gathering",
+            "description": "一起吃饭", "location": "北京",
+        }, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("start_time", resp.data)
+
+    def test_create_activity_notifies_other_approved_normal_users(self):
+        recipient = User.objects.create_user(
+            email="recipient@example.com", password="Pass1234!",
+            real_name="李四", high_school="一中", high_school_class="一班",
+        )
+        recipient.review_status = ReviewStatus.APPROVED
+        recipient.save()
+        pending_user = User.objects.create_user(
+            email="pending@example.com", password="Pass1234!",
+            real_name="王五", high_school="一中", high_school_class="一班",
+        )
+        restricted_user = User.objects.create_user(
+            email="restricted@example.com", password="Pass1234!",
+            real_name="赵六", high_school="一中", high_school_class="一班",
+        )
+        restricted_user.review_status = ReviewStatus.APPROVED
+        restricted_user.account_status = AccountStatus.RESTRICTED
+        restricted_user.save()
+        self.client.force_authenticate(self.user)
+        start_time = timezone.now() + timedelta(days=7)
+        deadline = start_time + timedelta(hours=1)
+
+        resp = self.client.post(reverse("activity-list"), {
+            "title": "周末聚餐", "activity_type": "gathering",
+            "description": "一起吃饭", "location": "北京",
+            "start_time": start_time.isoformat(),
+            "deadline": deadline.isoformat(),
+        }, format="json")
+
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertFalse(Notification.objects.filter(recipient=self.user).exists())
+        self.assertFalse(Notification.objects.filter(recipient=pending_user).exists())
+        self.assertFalse(Notification.objects.filter(recipient=restricted_user).exists())
+        notification = Notification.objects.get(recipient=recipient)
+        self.assertEqual(notification.notification_type, NotificationType.ACTIVITY_STATUS)
+        self.assertEqual(notification.title, "有新活动发布")
+        self.assertIn("周末聚餐", notification.content)
 
     def test_create_voting(self):
         self.client.force_authenticate(self.user)
@@ -139,6 +206,11 @@ class SignupTests(APITestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Signup.objects.count(), 1)
+        event = RealtimeEvent.objects.get(event_type=RealtimeEventType.ACTIVITY_UPDATED)
+        self.assertIsNone(event.recipient)
+        self.assertEqual(event.target_type, "activity")
+        self.assertEqual(event.target_id, str(self.activity.pk))
+        self.assertEqual(event.payload["action"], "signup.created")
 
     def test_cancel_signup(self):
         Signup.objects.create(activity=self.activity, user=self.user, real_name_snapshot=self.user.real_name)
@@ -146,6 +218,9 @@ class SignupTests(APITestCase):
         resp = self.client.delete(reverse("activity-signup", kwargs={"pk": self.activity.pk}))
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Signup.objects.count(), 0)
+        event = RealtimeEvent.objects.get(event_type=RealtimeEventType.ACTIVITY_UPDATED)
+        self.assertEqual(event.target_id, str(self.activity.pk))
+        self.assertEqual(event.payload["action"], "signup.deleted")
 
 
 class VoteTests(APITestCase):
@@ -172,6 +247,9 @@ class VoteTests(APITestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(VoteRecord.objects.count(), 1)
+        event = RealtimeEvent.objects.get(event_type=RealtimeEventType.ACTIVITY_UPDATED)
+        self.assertEqual(event.target_id, str(self.activity.pk))
+        self.assertEqual(event.payload["action"], "vote.submitted")
 
     def test_vote_multi_not_allowed(self):
         self.client.force_authenticate(self.user)
@@ -205,3 +283,6 @@ class ChainTests(APITestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(ChainRecord.objects.count(), 1)
+        event = RealtimeEvent.objects.get(event_type=RealtimeEventType.ACTIVITY_UPDATED)
+        self.assertEqual(event.target_id, str(self.activity.pk))
+        self.assertEqual(event.payload["action"], "chain.created")

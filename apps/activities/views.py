@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from django.utils import timezone
+from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import generics, permissions, status
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.models import AccountStatus, ReviewStatus
 from apps.common.permissions import IsApprovedClassmate, IsSuperAdmin
+from apps.notifications.services import NotificationType, RealtimeEventType, create_notifications, publish_event
 
 from .models import (
     Activity,
@@ -29,6 +31,17 @@ from .serializers import (
     VoteSerializer,
 )
 
+User = get_user_model()
+
+
+def publish_activity_updated(activity: Activity, action: str) -> None:
+    publish_event(
+        event_type=RealtimeEventType.ACTIVITY_UPDATED,
+        target_type="activity",
+        target_id=activity.pk,
+        payload={"activity_id": activity.pk, "action": action},
+    )
+
 
 class ActivityListView(generics.ListCreateAPIView):
     permission_classes = [IsApprovedClassmate]
@@ -46,7 +59,18 @@ class ActivityListView(generics.ListCreateAPIView):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save()
+        activity = serializer.save()
+        recipients = User.objects.filter(
+            review_status=ReviewStatus.APPROVED,
+            account_status=AccountStatus.NORMAL,
+        ).exclude(pk=self.request.user.pk)
+        create_notifications(
+            recipients=recipients,
+            notification_type=NotificationType.ACTIVITY_STATUS,
+            title="有新活动发布",
+            content=f"{self.request.user.real_name} 发起了活动「{activity.title}」，快去看看吧。",
+            target=activity,
+        )
 
     @extend_schema(
         tags=["activities"],
@@ -134,6 +158,7 @@ class SignupView(APIView):
             real_name_snapshot=request.user.real_name,
             **serializer.validated_data,
         )
+        publish_activity_updated(activity, "signup.created")
         return Response({"detail": "报名成功"}, status=status.HTTP_201_CREATED)
 
     @extend_schema(tags=["activities"])
@@ -143,6 +168,7 @@ class SignupView(APIView):
             return Response({"detail": "活动已截止，不能取消报名"}, status=status.HTTP_400_BAD_REQUEST)
         signup = generics.get_object_or_404(Signup, activity=activity, user=request.user)
         signup.delete()
+        publish_activity_updated(activity, "signup.deleted")
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -176,6 +202,7 @@ class VoteView(APIView):
                 option=option, user=request.user,
                 real_name_snapshot=request.user.real_name,
             )
+        publish_activity_updated(activity, "vote.submitted")
         return Response({"detail": "投票成功"}, status=status.HTTP_201_CREATED)
 
 
@@ -199,4 +226,5 @@ class ChainView(APIView):
             real_name_snapshot=request.user.real_name,
             **serializer.validated_data,
         )
+        publish_activity_updated(activity, "chain.created")
         return Response({"detail": "接龙填写成功"}, status=status.HTTP_201_CREATED)

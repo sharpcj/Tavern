@@ -21,7 +21,7 @@
       <!-- Gathering: signup -->
       <template v-if="activity.activity_type === 'gathering'">
         <h2>报名名单 ({{ activity.signups.length }})</h2>
-        <el-table :data="activity.signups" stripe>
+        <el-table class="responsive-table" :data="activity.signups" stripe>
           <el-table-column prop="real_name" label="姓名" />
           <el-table-column prop="participant_count" label="人数" width="80" />
           <el-table-column label="带家属" width="80"><template #default="{row}">{{ row.bring_guests ? '是' : '否' }}</template></el-table-column>
@@ -30,13 +30,25 @@
         <div v-if="activity.status === 'open'" class="action-bar">
           <el-button type="primary" @click="showSignup = true">我要报名</el-button>
         </div>
-        <el-dialog v-model="showSignup" title="报名" width="400px">
-          <el-form :model="signupForm" label-position="top">
+        <el-dialog v-model="showSignup" title="报名" width="400px" class="signup-dialog">
+          <el-alert
+            class="signup-tip"
+            title="报名使用你的真实姓名，是否带家属由报名人自行选择。"
+            type="info"
+            :closable="false"
+            show-icon
+          />
+          <el-form class="signup-form" :model="signupForm" label-position="top">
             <el-form-item label="参加人数"><el-input-number v-model="signupForm.participant_count" :min="1" /></el-form-item>
             <el-form-item label="带家属"><el-switch v-model="signupForm.bring_guests" /></el-form-item>
             <el-form-item label="备注"><el-input v-model="signupForm.note" /></el-form-item>
           </el-form>
-          <template #footer><el-button @click="showSignup = false">取消</el-button><el-button type="primary" :loading="submitting" @click="doSignup">确认报名</el-button></template>
+          <template #footer>
+            <div class="dialog-footer-actions">
+              <el-button @click="showSignup = false">取消</el-button>
+              <el-button type="primary" :loading="submitting" @click="doSignup">确认报名</el-button>
+            </div>
+          </template>
         </el-dialog>
       </template>
 
@@ -49,7 +61,7 @@
               <el-checkbox :value="opt.id">{{ opt.text }}</el-checkbox>
             </div>
           </el-checkbox-group>
-          <el-button type="primary" :loading="submitting" @click="doVote">提交投票</el-button>
+          <el-button class="vote-submit" type="primary" :loading="submitting" @click="doVote">提交投票</el-button>
         </div>
         <h3 style="margin-top:16px">投票结果</h3>
         <div v-for="r in activity.vote_results" :key="r.option_id" class="result-item">
@@ -61,7 +73,7 @@
       <!-- Chain -->
       <template v-if="activity.activity_type === 'chain'">
         <h2>接龙列表</h2>
-        <el-table :data="activity.chain_records" stripe>
+        <el-table class="responsive-table" :data="activity.chain_records" stripe>
           <el-table-column prop="real_name" label="姓名" />
           <el-table-column label="参加" width="80"><template #default="{row}">{{ row.will_attend ? '是' : '否' }}</template></el-table-column>
           <el-table-column prop="participant_count" label="人数" width="80" />
@@ -70,13 +82,25 @@
         <div v-if="activity.status === 'open'" class="action-bar">
           <el-button type="primary" @click="showChain = true">填写接龙</el-button>
         </div>
-        <el-dialog v-model="showChain" title="填写接龙" width="400px">
+        <el-dialog v-model="showChain" title="填写接龙" width="400px" class="chain-dialog">
+          <el-alert
+            class="signup-tip"
+            title="接龙使用你的真实姓名，填写内容会展示在活动接龙列表中。"
+            type="info"
+            :closable="false"
+            show-icon
+          />
           <el-form :model="chainForm" label-position="top">
             <el-form-item label="是否参加"><el-switch v-model="chainForm.will_attend" /></el-form-item>
             <el-form-item label="人数"><el-input-number v-model="chainForm.participant_count" :min="1" /></el-form-item>
             <el-form-item label="备注"><el-input v-model="chainForm.note" /></el-form-item>
           </el-form>
-          <template #footer><el-button @click="showChain = false">取消</el-button><el-button type="primary" :loading="submitting" @click="doChain">确认</el-button></template>
+          <template #footer>
+            <div class="dialog-footer-actions">
+              <el-button @click="showChain = false">取消</el-button>
+              <el-button type="primary" :loading="submitting" @click="doChain">确认</el-button>
+            </div>
+          </template>
         </el-dialog>
       </template>
 
@@ -90,6 +114,7 @@ import { ElMessage } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchActivityDetail, signupActivity, voteActivity, fillChain, type ActivityDetail } from '@/api/activities'
+import { useRealtimeEvent } from '@/composables/useRealtimeEvents'
 import ReportButton from '@/components/ReportButton.vue'
 
 const route = useRoute()
@@ -102,10 +127,10 @@ const selectedOptions = ref<number[]>([])
 const signupForm = reactive({ participant_count: 1, bring_guests: false, note: '' })
 const chainForm = reactive({ will_attend: true, participant_count: 1, note: '' })
 
-async function load() {
-  loading.value = true
+async function load(showLoading = true) {
+  if (showLoading) loading.value = true
   try { activity.value = await fetchActivityDetail(Number(route.params.id)) }
-  finally { loading.value = false }
+  finally { if (showLoading) loading.value = false }
 }
 
 async function doSignup() {
@@ -135,6 +160,11 @@ function statusTag(s: string) { return s === 'open' ? 'success' : s === 'closed'
 function formatTime(iso: string) { return new Date(iso).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }
 
 onMounted(() => load())
+useRealtimeEvent((event) => {
+  if (event.type === 'activity.updated' && Number(event.target_id) === Number(route.params.id)) {
+    load(false)
+  }
+})
 </script>
 
 <style scoped>
@@ -144,4 +174,27 @@ onMounted(() => load())
 .vote-options { margin: 12px 0; }
 .vote-opt { margin: 8px 0; }
 .result-item { padding: 6px 0; }
+.signup-tip { margin-bottom: 12px; }
+.dialog-footer-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+@media (max-width: 640px) {
+  :deep(.signup-dialog),
+  :deep(.chain-dialog) {
+    width: calc(100vw - 24px) !important;
+    margin-top: 12vh;
+  }
+
+  .header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .header h1 { width: 100%; font-size: 22px; line-height: 1.3; }
+  .body-text { font-size: 15px; }
+  :deep(.el-descriptions) { font-size: 13px; }
+  :deep(.el-input-number) { width: 100%; }
+  .vote-options { display: grid; gap: 12px; }
+  .vote-submit { width: 100%; }
+  .result-item { display: grid; gap: 4px; line-height: 1.5; }
+  .action-bar .el-button { width: 100%; }
+  .dialog-footer-actions { flex-direction: column-reverse; }
+  .dialog-footer-actions .el-button { width: 100%; margin-left: 0; }
+  .responsive-table { width: 100%; }
+}
 </style>

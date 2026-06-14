@@ -115,6 +115,19 @@ class ActivityCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         activity_type = attrs.get("activity_type")
+        if self.instance is not None:
+            activity_type = attrs.get("activity_type", self.instance.activity_type)
+        start_time = attrs.get("start_time", getattr(self.instance, "start_time", None))
+        deadline = attrs.get("deadline", getattr(self.instance, "deadline", None))
+
+        if activity_type == ActivityType.GATHERING:
+            if not start_time:
+                raise serializers.ValidationError({"start_time": "聚会报名必须选择开始时间"})
+            if not deadline:
+                raise serializers.ValidationError({"deadline": "聚会报名必须选择报名截止时间"})
+        if start_time and deadline and deadline <= start_time:
+            raise serializers.ValidationError({"deadline": "截止时间必须晚于开始时间"})
+
         if activity_type == ActivityType.VOTING:
             options = attrs.pop("vote_options", [])
             if not options or len(options) < 2:
