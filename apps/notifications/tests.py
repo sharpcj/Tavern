@@ -8,6 +8,10 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.accounts.models import AccountStatus, ReviewStatus, UserRole
+from apps.activities.models import Activity, ActivityType
+from apps.announcements.models import Announcement
+from apps.comments.models import Comment
+from apps.posts.models import Post
 
 from .models import Notification, NotificationType, RealtimeEventType
 from .services import create_notification, publish_event
@@ -58,6 +62,50 @@ class NotificationApiTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data["count"], 1)
         self.assertEqual(resp.data["results"][0]["title"], "系统通知")
+
+    def test_notification_list_includes_target_url_for_common_targets(self):
+        activity = Activity.objects.create(
+            title="聚会",
+            activity_type=ActivityType.GATHERING,
+            initiator=self.other,
+            initiator_name_snapshot=self.other.real_name,
+            description="desc",
+        )
+        post = Post.objects.create(author=self.other, content="动态")
+        comment = Comment.objects.create(post=post, author=self.other, content="评论")
+        announcement = Announcement.objects.create(
+            title="公告",
+            content="内容",
+            publisher=self.other,
+            publisher_name_snapshot=self.other.real_name,
+        )
+        create_notification(
+            recipient=self.user,
+            notification_type=NotificationType.ACTIVITY_STATUS,
+            title="活动",
+            target=activity,
+        )
+        create_notification(
+            recipient=self.user,
+            notification_type=NotificationType.COMMENT_REPLY,
+            title="评论",
+            target=comment,
+        )
+        create_notification(
+            recipient=self.user,
+            notification_type=NotificationType.ANNOUNCEMENT,
+            title="公告",
+            target=announcement,
+        )
+        self.client.force_authenticate(self.user)
+
+        resp = self.client.get(reverse("notification-list"))
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        urls_by_title = {item["title"]: item["target_url"] for item in resp.data["results"]}
+        self.assertEqual(urls_by_title["活动"], f"/activities/{activity.pk}")
+        self.assertEqual(urls_by_title["评论"], f"/posts/{post.pk}")
+        self.assertEqual(urls_by_title["公告"], f"/announcements/{announcement.pk}")
 
     def test_unread_count_and_mark_read(self):
         notification = create_notification(

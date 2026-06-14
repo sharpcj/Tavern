@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from apps.accounts.models import UserRole
 from apps.common.enums import ContentStatus
 from apps.common.permissions import IsApprovedClassmate
-from apps.notifications.services import RealtimeEventType, publish_event
+from apps.notifications.services import NotificationType, RealtimeEventType, create_notification, publish_event
 
 from .models import Album, Photo, PhotoComment
 from .serializers import (
@@ -172,6 +172,14 @@ class PhotoCommentCreateView(APIView):
             target_id=comment.pk,
             payload={"photo_id": photo.pk, "album_id": photo.album_id},
         )
+        if photo.uploader != request.user:
+            create_notification(
+                recipient=photo.uploader,
+                notification_type=NotificationType.COMMENT_REPLY,
+                title="你的照片收到了评论",
+                content=comment.content[:200],
+                target=comment,
+            )
         return Response(PhotoCommentSerializer(comment, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
@@ -203,6 +211,14 @@ class PhotoCommentReplyView(APIView):
             target_id=comment.pk,
             payload={"photo_id": target.photo_id, "album_id": target.photo.album_id},
         )
+        if target.author != request.user:
+            create_notification(
+                recipient=target.author,
+                notification_type=NotificationType.COMMENT_REPLY,
+                title="你的照片评论收到了回复",
+                content=comment.content[:200],
+                target=comment,
+            )
         return Response(PhotoCommentSerializer(comment, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 

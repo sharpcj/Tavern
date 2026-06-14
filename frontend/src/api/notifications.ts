@@ -8,6 +8,7 @@ export interface NotificationItem {
   content: string
   target_type: string | null
   target_object_id: number | null
+  target_url: string | null
   is_read: boolean
   read_at: string | null
   created_at: string

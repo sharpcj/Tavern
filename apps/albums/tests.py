@@ -18,6 +18,7 @@ from apps.accounts.models import ReviewStatus, UserRole
 from apps.activities.models import Activity, ActivityType
 from apps.common.enums import ContentStatus, DisplayMode
 from apps.common.models import Media
+from apps.notifications.models import Notification, NotificationType
 
 from .models import Album, AlbumCategory, Photo, PhotoComment
 
@@ -160,6 +161,50 @@ class AlbumTests(APITestCase):
         detail_resp = self.client.get(reverse("photo-detail", kwargs={"pk": photo_id}))
         self.assertEqual(detail_resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(detail_resp.data["comments"]), 1)
+
+    def test_photo_comment_notifies_photo_uploader(self):
+        album = Album.objects.create(title="相册", creator=self.user, creator_name_snapshot=self.user.real_name)
+        self.client.force_authenticate(self.user)
+        upload_resp = self.client.post(
+            reverse("album-photo-upload", kwargs={"pk": album.pk}),
+            {"image": make_image_file(), "caption": "说明"},
+            format="multipart",
+        )
+        self.client.force_authenticate(self.other)
+        resp = self.client.post(
+            reverse("photo-comment-create", kwargs={"pk": upload_resp.data["id"]}),
+            {"content": "好照片", "display_mode": DisplayMode.REAL_NAME},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        notification = Notification.objects.get(recipient=self.user)
+        self.assertEqual(notification.notification_type, NotificationType.COMMENT_REPLY)
+        self.assertEqual(notification.title, "你的照片收到了评论")
+        self.assertEqual(notification.target_object_id, resp.data["id"])
+        self.client.force_authenticate(self.user)
+        list_resp = self.client.get(reverse("notification-list"))
+        self.assertEqual(list_resp.data["results"][0]["target_url"], f"/photos/{upload_resp.data['id']}")
+
+    def test_photo_comment_reply_notifies_target_comment_author(self):
+        album = Album.objects.create(title="相册", creator=self.user, creator_name_snapshot=self.user.real_name)
+        self.client.force_authenticate(self.user)
+        upload_resp = self.client.post(
+            reverse("album-photo-upload", kwargs={"pk": album.pk}),
+            {"image": make_image_file(), "caption": "说明"},
+            format="multipart",
+        )
+        photo = Photo.objects.get(pk=upload_resp.data["id"])
+        root = PhotoComment.objects.create(photo=photo, author=self.other, content="A 评论", display_mode=DisplayMode.REAL_NAME)
+
+        resp = self.client.post(
+            reverse("photo-comment-reply", kwargs={"pk": root.pk}),
+            {"content": "回复", "display_mode": DisplayMode.REAL_NAME},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        notification = Notification.objects.get(recipient=self.other)
+        self.assertEqual(notification.title, "你的照片评论收到了回复")
+        self.assertEqual(notification.target_object_id, resp.data["id"])
 
     def test_photo_comment_reply_to_reply_is_flattened(self):
         album = Album.objects.create(title="相册", creator=self.user, creator_name_snapshot=self.user.real_name)

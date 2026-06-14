@@ -15,7 +15,13 @@
 
     <div v-loading="loading">
       <el-empty v-if="notifications.length === 0" description="暂无通知" />
-      <div v-for="item in notifications" :key="item.id" class="notification-item" :class="{ unread: !item.is_read }">
+      <div
+        v-for="item in notifications"
+        :key="item.id"
+        class="notification-item"
+        :class="{ unread: !item.is_read, clickable: Boolean(item.target_url) }"
+        @click="openNotification(item)"
+      >
         <div class="notification-header">
           <el-tag size="small" :type="item.is_read ? 'info' : 'danger'">{{ item.is_read ? '已读' : '未读' }}</el-tag>
           <strong>{{ item.title }}</strong>
@@ -23,7 +29,8 @@
         </div>
         <div class="type">{{ item.notification_type_display }}</div>
         <div class="content">{{ item.content }}</div>
-        <el-button v-if="!item.is_read" text size="small" type="primary" @click="markRead(item.id)">标记已读</el-button>
+        <el-button v-if="!item.is_read" text size="small" type="primary" @click.stop="markRead(item.id)">标记已读</el-button>
+        <el-button v-if="item.target_url" text size="small" type="primary" @click.stop="openNotification(item)">查看详情</el-button>
       </div>
     </div>
   </section>
@@ -32,9 +39,11 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { fetchNotifications, fetchUnreadNotificationCount, markAllNotificationsRead, markNotificationRead, type NotificationItem } from '@/api/notifications'
 import { useRealtimeEvent } from '@/composables/useRealtimeEvents'
 
+const router = useRouter()
 const loading = ref(false)
 const activeTab = ref('all')
 const notifications = ref<NotificationItem[]>([])
@@ -58,6 +67,17 @@ async function markRead(id: number) {
   await load()
 }
 
+async function openNotification(item: NotificationItem) {
+  if (!item.is_read) {
+    await markNotificationRead(item.id)
+    item.is_read = true
+    unreadCount.value = Math.max(unreadCount.value - 1, 0)
+  }
+  if (item.target_url) {
+    await router.push(item.target_url)
+  }
+}
+
 async function markAllRead() {
   const result = await markAllNotificationsRead()
   ElMessage.success(`已标记 ${result.updated} 条通知`)
@@ -78,6 +98,8 @@ useRealtimeEvent((event) => {
 
 <style scoped>
 .notification-item { padding: 14px 0; border-bottom: 1px solid #e5e7eb; }
+.notification-item.clickable { cursor: pointer; }
+.notification-item.clickable:hover { background: #f8fafc; border-radius: 8px; padding-left: 8px; padding-right: 8px; }
 .notification-item.unread { background: #fff7ed; padding-left: 8px; border-radius: 8px; }
 .notification-header { display: flex; align-items: center; gap: 8px; }
 .time { margin-left: auto; font-size: 12px; color: #9ca3af; }
