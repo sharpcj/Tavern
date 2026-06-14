@@ -50,6 +50,7 @@ import { ElMessage } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchAlbumDetail, uploadPhoto, type AlbumDetail } from '@/api/albums'
+import { useRealtimeEvent } from '@/composables/useRealtimeEvents'
 
 const route = useRoute()
 const loading = ref(true)
@@ -102,6 +103,11 @@ async function submitUpload() {
 }
 
 onMounted(() => load())
+useRealtimeEvent((event) => {
+  if (event.type === 'album.photo.created' && Number(event.payload.album_id) === Number(route.params.id)) {
+    load()
+  }
+})
 </script>
 
 <style scoped>

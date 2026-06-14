@@ -15,7 +15,7 @@ from apps.common.permissions import IsApprovedClassmate, IsModeratorOrAbove
 from apps.audit_logs.models import AuditAction
 from apps.audit_logs.services import write_audit_log
 from apps.accounts.models import AccountStatus, ReviewStatus
-from apps.notifications.services import NotificationType, create_notifications
+from apps.notifications.services import NotificationType, RealtimeEventType, create_notifications, publish_event
 
 from .models import Announcement, AnnouncementReadReceipt
 from .serializers import AnnouncementDetailSerializer, AnnouncementListSerializer, AnnouncementWriteSerializer
@@ -58,6 +58,12 @@ class AnnouncementListCreateView(generics.ListCreateAPIView):
         write_serializer.is_valid(raise_exception=True)
         announcement = write_serializer.save()
         write_audit_log(actor=request.user, action=AuditAction.ANNOUNCEMENT_CREATED, target=announcement, reason=announcement.title)
+        publish_event(
+            event_type=RealtimeEventType.ANNOUNCEMENT_CREATED,
+            target_type="announcement",
+            target_id=announcement.pk,
+            payload={"is_pinned": announcement.is_pinned, "require_read_confirm": announcement.require_read_confirm},
+        )
         if announcement.require_read_confirm:
             recipients = User.objects.filter(review_status=ReviewStatus.APPROVED).exclude(account_status=AccountStatus.BANNED)
             create_notifications(
@@ -116,6 +122,12 @@ class AnnouncementDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer.is_valid(raise_exception=True)
         announcement = serializer.save()
         write_audit_log(actor=request.user, action=AuditAction.ANNOUNCEMENT_UPDATED, target=announcement, reason=announcement.title)
+        publish_event(
+            event_type=RealtimeEventType.ANNOUNCEMENT_CREATED,
+            target_type="announcement",
+            target_id=announcement.pk,
+            payload={"is_pinned": announcement.is_pinned, "require_read_confirm": announcement.require_read_confirm},
+        )
         return Response(AnnouncementDetailSerializer(announcement, context={"request": request}).data)
 
     @extend_schema(tags=["announcements"])

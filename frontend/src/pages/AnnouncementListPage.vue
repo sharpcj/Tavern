@@ -31,6 +31,7 @@
 import { onMounted, ref } from 'vue'
 
 import { fetchAnnouncements, type AnnouncementListItem } from '@/api/announcements'
+import { useRealtimeEvent } from '@/composables/useRealtimeEvents'
 
 const loading = ref(false)
 const announcements = ref<AnnouncementListItem[]>([])
@@ -59,6 +60,12 @@ function formatTime(iso: string) {
 }
 
 onMounted(() => load())
+useRealtimeEvent((event) => {
+  if (event.type === 'announcement.created') {
+    currentPage.value = 1
+    load()
+  }
+})
 </script>
 
 <style scoped>

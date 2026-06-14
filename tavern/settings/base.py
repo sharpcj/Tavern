@@ -147,6 +147,8 @@ SPECTACULAR_SETTINGS = {
         "ContentStatusEnum": "apps.common.enums.ContentStatus",
         "PostCategoryEnum": "apps.posts.models.PostCategory",
         "AlbumCategoryEnum": "apps.albums.models.AlbumCategory",
+        "RealtimeEventTypeEnum": "apps.notifications.models.RealtimeEventType",
+        "NotificationTypeEnum": "apps.notifications.models.NotificationType",
     },
 }
 

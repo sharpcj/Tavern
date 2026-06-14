@@ -9,8 +9,8 @@ from rest_framework.test import APITestCase
 
 from apps.accounts.models import AccountStatus, ReviewStatus, UserRole
 
-from .models import Notification, NotificationType
-from .services import create_notification
+from .models import Notification, NotificationType, RealtimeEventType
+from .services import create_notification, publish_event
 
 User = get_user_model()
 
@@ -93,3 +93,42 @@ class NotificationApiTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data["updated"], 2)
         self.assertEqual(Notification.objects.filter(recipient=self.user, is_read=False).count(), 0)
+
+    def test_realtime_since_returns_broadcast_and_own_events_only(self):
+        broadcast = publish_event(event_type=RealtimeEventType.POST_CREATED, target_type="post", target_id=1)
+        own = publish_event(
+            recipient=self.user,
+            event_type=RealtimeEventType.NOTIFICATION_CREATED,
+            target_type="notification",
+            target_id=2,
+        )
+        publish_event(
+            recipient=self.other,
+            event_type=RealtimeEventType.NOTIFICATION_CREATED,
+            target_type="notification",
+            target_id=3,
+        )
+
+        self.client.force_authenticate(self.user)
+        resp = self.client.get(reverse("realtime-event-since"), {"cursor": 0})
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual([item["id"] for item in resp.data["results"]], [broadcast.pk, own.pk])
+        self.assertEqual(resp.data["latest_cursor"], own.pk)
+
+    def test_pending_user_cannot_access_realtime_since(self):
+        pending = User.objects.create_user(
+            email="pending@example.com",
+            password="Pass1234!",
+            real_name="王五",
+            high_school="一中",
+            high_school_class="一班",
+        )
+        pending.review_status = ReviewStatus.PENDING
+        pending.account_status = AccountStatus.NORMAL
+        pending.save()
+
+        self.client.force_authenticate(pending)
+        resp = self.client.get(reverse("realtime-event-since"), {"cursor": 0})
+
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)

@@ -1,11 +1,11 @@
 <template>
   <section class="page-card announcement-banner" v-if="announcements.length > 0">
     <div class="banner-header">
-      <strong>置顶公告</strong>
+      <strong>最新公告</strong>
       <el-button text size="small" @click="$router.push('/announcements')">查看全部</el-button>
     </div>
     <div v-for="item in announcements" :key="item.id" class="banner-item" @click="$router.push(`/announcements/${item.id}`)">
-      <el-tag size="small" type="danger">置顶</el-tag>
+      <el-tag size="small" :type="item.is_pinned ? 'danger' : 'info'">{{ item.is_pinned ? '置顶' : '公告' }}</el-tag>
       <span class="title">{{ item.title }}</span>
       <el-tag v-if="item.require_read_confirm && !item.is_read" size="small" type="warning">待确认</el-tag>
     </div>
@@ -15,16 +15,24 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 
-import { fetchPinnedAnnouncements, type AnnouncementListItem } from '@/api/announcements'
+import { fetchAnnouncements, type AnnouncementListItem } from '@/api/announcements'
+import { useRealtimeEvent } from '@/composables/useRealtimeEvents'
 
 const announcements = ref<AnnouncementListItem[]>([])
 
 async function load() {
-  const resp = await fetchPinnedAnnouncements()
-  announcements.value = resp.results
+  const resp = await fetchAnnouncements({ page: 1, page_size: 50 })
+  announcements.value = [...resp.results]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 3)
 }
 
 onMounted(() => load())
+useRealtimeEvent((event) => {
+  if (event.type === 'announcement.created' || event.type === 'notification.created') {
+    load()
+  }
+})
 </script>
 
 <style scoped>

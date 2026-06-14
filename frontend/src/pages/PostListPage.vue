@@ -11,6 +11,16 @@
       <el-radio-button v-for="cat in POST_CATEGORIES" :key="cat.value" :value="cat.value">{{ cat.label }}</el-radio-button>
     </el-radio-group>
 
+    <el-alert
+      v-if="pendingNewPostCount > 0"
+      class="new-post-alert"
+      :title="`有 ${pendingNewPostCount} 条新动态，点击刷新查看`"
+      type="success"
+      show-icon
+      :closable="false"
+      @click="refreshNewPosts"
+    />
+
     <div v-loading="loading">
       <el-empty v-if="!loading && posts.length === 0" description="还没有动态，来发布第一条吧" />
       <div v-for="post in posts" :key="post.id" class="post-card" @click="$router.push(`/posts/${post.id}`)">
@@ -46,6 +56,7 @@
 import { onMounted, ref } from 'vue'
 
 import AnnouncementBanner from '@/components/AnnouncementBanner.vue'
+import { useRealtimeEvent } from '@/composables/useRealtimeEvents'
 import { fetchPosts, POST_CATEGORIES, type PostListItem } from '@/api/posts'
 
 const loading = ref(false)
@@ -54,6 +65,7 @@ const total = ref(0)
 const currentPage = ref(1)
 const pageSize = 20
 const activeCategory = ref('')
+const pendingNewPostCount = ref(0)
 
 async function loadPosts() {
   loading.value = true
@@ -72,6 +84,13 @@ async function loadPosts() {
 
 function loadPage(page: number) {
   currentPage.value = page
+  pendingNewPostCount.value = 0
+  loadPosts()
+}
+
+function refreshNewPosts() {
+  pendingNewPostCount.value = 0
+  currentPage.value = 1
   loadPosts()
 }
 
@@ -84,6 +103,15 @@ function truncate(text: string, max: number) {
 }
 
 onMounted(() => loadPosts())
+useRealtimeEvent((event) => {
+  if (event.type === 'post.created') {
+    pendingNewPostCount.value += 1
+    return
+  }
+  if (event.type === 'post.updated' || event.type === 'comment.created') {
+    loadPosts()
+  }
+})
 </script>
 
 <style scoped>
@@ -98,6 +126,10 @@ onMounted(() => loadPosts())
 }
 .category-filter {
   margin-bottom: 20px;
+}
+.new-post-alert {
+  margin-bottom: 16px;
+  cursor: pointer;
 }
 .post-card {
   padding: 20px;

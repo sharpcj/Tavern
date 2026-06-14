@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from apps.accounts.models import UserRole
 from apps.common.enums import ContentStatus
 from apps.common.permissions import IsApprovedClassmate
+from apps.notifications.services import RealtimeEventType, publish_event
 
 from .models import Album, Photo, PhotoComment
 from .serializers import (
@@ -119,6 +120,12 @@ class PhotoUploadView(APIView):
         serializer = PhotoUploadSerializer(data=request.data, context={"request": request, "album": album})
         serializer.is_valid(raise_exception=True)
         photo = serializer.save()
+        publish_event(
+            event_type=RealtimeEventType.ALBUM_PHOTO_CREATED,
+            target_type="photo",
+            target_id=photo.pk,
+            payload={"album_id": album.pk},
+        )
         return Response(PhotoDetailSerializer(photo, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
@@ -157,6 +164,12 @@ class PhotoCommentCreateView(APIView):
         serializer = PhotoCommentCreateSerializer(data=request.data, context={"request": request, "photo": photo})
         serializer.is_valid(raise_exception=True)
         comment = serializer.save()
+        publish_event(
+            event_type=RealtimeEventType.PHOTO_COMMENT_CREATED,
+            target_type="photo_comment",
+            target_id=comment.pk,
+            payload={"photo_id": photo.pk, "album_id": photo.album_id},
+        )
         return Response(PhotoCommentSerializer(comment, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
@@ -181,6 +194,12 @@ class PhotoCommentReplyView(APIView):
             root_parent = target.parent
             reply_to = target
         comment = serializer.save(parent=root_parent, reply_to=reply_to)
+        publish_event(
+            event_type=RealtimeEventType.PHOTO_COMMENT_CREATED,
+            target_type="photo_comment",
+            target_id=comment.pk,
+            payload={"photo_id": target.photo_id, "album_id": target.photo.album_id},
+        )
         return Response(PhotoCommentSerializer(comment, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 

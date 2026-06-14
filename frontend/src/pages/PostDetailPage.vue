@@ -110,6 +110,7 @@ import {
   type PostDetail,
 } from '@/api/posts'
 import { useAuthStore } from '@/stores/auth'
+import { useRealtimeEvent } from '@/composables/useRealtimeEvents'
 import ReportButton from '@/components/ReportButton.vue'
 
 const route = useRoute()
@@ -223,6 +224,15 @@ function formatTime(iso: string) {
 }
 
 onMounted(() => load())
+useRealtimeEvent((event) => {
+  const currentPostId = Number(route.params.id)
+  if (event.type === 'post.updated' && Number(event.target_id) === currentPostId) {
+    load()
+  }
+  if (event.type === 'comment.created' && Number(event.payload.post_id) === currentPostId) {
+    load()
+  }
+})
 </script>
 
 <style scoped>

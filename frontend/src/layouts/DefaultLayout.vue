@@ -9,7 +9,9 @@
           <el-button text @click="$router.push('/announcements')">公告</el-button>
           <el-button text @click="$router.push('/birthdays')">生日</el-button>
           <el-button text @click="$router.push('/classmates')">通讯录</el-button>
-          <el-button text @click="$router.push('/notifications')">系统通知</el-button>
+          <el-badge :value="unreadNotificationCount" :hidden="unreadNotificationCount === 0" :max="99" class="nav-badge">
+            <el-button text @click="$router.push('/notifications')">系统通知</el-button>
+          </el-badge>
           <el-button v-if="authStore.isModeratorOrAbove" text @click="$router.push('/admin/reports')">举报处理</el-button>
         </template>
         <template v-if="!authStore.isAuthenticated">
@@ -50,7 +52,9 @@
           <el-button text @click="go('/announcements')">公告</el-button>
           <el-button text @click="go('/birthdays')">生日</el-button>
           <el-button text @click="go('/classmates')">通讯录</el-button>
-          <el-button text @click="go('/notifications')">系统通知</el-button>
+          <el-badge :value="unreadNotificationCount" :hidden="unreadNotificationCount === 0" :max="99" class="mobile-badge">
+            <el-button text @click="go('/notifications')">系统通知</el-button>
+          </el-badge>
           <el-button v-if="authStore.isModeratorOrAbove" text @click="go('/admin/reports')">举报处理</el-button>
           <el-divider />
           <el-button text @click="go('/profile/edit')">编辑个人资料</el-button>
@@ -79,7 +83,9 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { fetchUnreadNotificationCount } from '@/api/notifications'
 import { fetchMyProfile } from '@/api/profile'
+import { startRealtimeEvents, stopRealtimeEvents, useRealtimeEvent } from '@/composables/useRealtimeEvents'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
@@ -87,6 +93,7 @@ const authStore = useAuthStore()
 const profileAvatarUrl = ref('')
 const profileNickname = ref('')
 const mobileMenuVisible = ref(false)
+const unreadNotificationCount = ref(0)
 
 const avatarText = computed(() => {
   const name = profileNickname.value || authStore.currentUser?.nickname || authStore.currentUser?.real_name || authStore.currentUser?.email || '我'
@@ -106,6 +113,26 @@ async function loadProfileAvatar() {
   } catch {
     profileAvatarUrl.value = ''
     profileNickname.value = ''
+  }
+}
+
+async function loadUnreadNotificationCount() {
+  if (!authStore.isAuthenticated || !authStore.isReviewApproved) {
+    unreadNotificationCount.value = 0
+    return
+  }
+  try {
+    unreadNotificationCount.value = await fetchUnreadNotificationCount()
+  } catch {
+    unreadNotificationCount.value = 0
+  }
+}
+
+function refreshRealtimeConnection() {
+  stopRealtimeEvents()
+  if (authStore.isAuthenticated && authStore.isReviewApproved && authStore.isAccountNormal) {
+    startRealtimeEvents()
+    loadUnreadNotificationCount()
   }
 }
 
@@ -131,8 +158,20 @@ function logoutFromMobile() {
   router.push('/login')
 }
 
-onMounted(() => loadProfileAvatar())
-watch(() => authStore.currentUser?.account_id, () => loadProfileAvatar())
+onMounted(() => {
+  loadProfileAvatar()
+  loadUnreadNotificationCount()
+  refreshRealtimeConnection()
+})
+watch(() => authStore.currentUser?.account_id, () => {
+  loadProfileAvatar()
+  refreshRealtimeConnection()
+})
+useRealtimeEvent((event) => {
+  if (event.type === 'notification.created' || event.type === 'notification.read') {
+    loadUnreadNotificationCount()
+  }
+})
 </script>
 
 <style scoped>
@@ -157,6 +196,16 @@ watch(() => authStore.currentUser?.account_id, () => loadProfileAvatar())
   width: 100%;
   margin-left: 0;
   font-size: 16px;
+}
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+}
+.mobile-badge {
+  width: 100%;
+}
+.mobile-badge :deep(.el-badge__content) {
+  right: 8px;
 }
 @media (max-width: 768px) {
   .desktop-nav {

@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from apps.common.permissions import IsApprovedClassmate, IsSuperAdmin
 from apps.comments.models import Comment
 from apps.common.enums import ContentStatus
-from apps.notifications.services import NotificationType, create_notification
+from apps.notifications.services import NotificationType, RealtimeEventType, create_notification, publish_event
 
 from .models import Post
 from .serializers import (
@@ -68,6 +68,7 @@ class PostListView(generics.ListCreateAPIView):
         uploaded_images = request.FILES.getlist("uploaded_images")
         serializer.validate_uploaded_images(uploaded_images)
         post = serializer.save(author=request.user)
+        publish_event(event_type=RealtimeEventType.POST_CREATED, target_type="post", target_id=post.pk)
         return Response(PostDetailSerializer(post, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
@@ -98,6 +99,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         instance.soft_delete(self.request.user)
+        publish_event(event_type=RealtimeEventType.POST_UPDATED, target_type="post", target_id=instance.pk)
 
     @extend_schema(responses=PostDetailSerializer, tags=["posts"])
     def get(self, request, *args, **kwargs):
@@ -113,6 +115,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         if uploaded_images:
             serializer.validate_uploaded_images(uploaded_images)
         post = serializer.save()
+        publish_event(event_type=RealtimeEventType.POST_UPDATED, target_type="post", target_id=post.pk)
         return Response(PostDetailSerializer(post, context={"request": request}).data)
 
     @extend_schema(tags=["posts"])
@@ -139,6 +142,7 @@ class PostPinView(APIView):
             post.pinned_at = None
             post.pinned_by = None
         post.save(update_fields=["is_pinned", "pinned_at", "pinned_by", "updated_at"])
+        publish_event(event_type=RealtimeEventType.POST_UPDATED, target_type="post", target_id=post.pk)
         return Response(PostDetailSerializer(post).data)
 
 
@@ -172,7 +176,17 @@ class CommentListView(generics.ListCreateAPIView):
 
     @extend_schema(request=CommentCreateSerializer, responses=CommentSerializer, tags=["comments"])
     def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
+        post = generics.get_object_or_404(Post.objects.filter(status=ContentStatus.PUBLISHED), pk=self.kwargs["post_pk"])
+        serializer = CommentCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        comment = serializer.save(author=request.user, post=post)
+        publish_event(
+            event_type=RealtimeEventType.COMMENT_CREATED,
+            target_type="comment",
+            target_id=comment.pk,
+            payload={"post_id": post.pk},
+        )
+        return Response(CommentSerializer(comment, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
 class CommentReplyView(APIView):
@@ -195,6 +209,12 @@ class CommentReplyView(APIView):
             root_parent = target.parent
             reply_to = target
         reply = serializer.save(author=request.user, post=target.post, parent=root_parent, reply_to=reply_to)
+        publish_event(
+            event_type=RealtimeEventType.COMMENT_CREATED,
+            target_type="comment",
+            target_id=reply.pk,
+            payload={"post_id": target.post_id},
+        )
         if target.author != request.user:
             create_notification(
                 recipient=target.author,

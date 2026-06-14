@@ -20,6 +20,48 @@ class NotificationType(models.TextChoices):
     SYSTEM = "system", "系统通知"
 
 
+class RealtimeEventType(models.TextChoices):
+    POST_CREATED = "post.created", "动态发布"
+    POST_UPDATED = "post.updated", "动态更新"
+    COMMENT_CREATED = "comment.created", "动态评论"
+    ALBUM_PHOTO_CREATED = "album.photo.created", "相册照片上传"
+    PHOTO_COMMENT_CREATED = "photo.comment.created", "照片评论"
+    ANNOUNCEMENT_CREATED = "announcement.created", "公告发布"
+    ACTIVITY_UPDATED = "activity.updated", "活动更新"
+    NOTIFICATION_CREATED = "notification.created", "系统通知创建"
+    NOTIFICATION_READ = "notification.read", "系统通知已读"
+
+
+class RealtimeEvent(models.Model):
+    """Short-lived realtime event used by SSE and reconnect backfill."""
+
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="realtime_events",
+        verbose_name="接收人",
+    )
+    event_type = models.CharField("事件类型", max_length=64, choices=RealtimeEventType.choices, db_index=True)
+    target_type = models.CharField("目标类型", max_length=64, blank=True)
+    target_id = models.CharField("目标 ID", max_length=64, blank=True)
+    payload = models.JSONField("事件载荷", default=dict, blank=True)
+    created_at = models.DateTimeField("创建时间", auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = "实时事件"
+        verbose_name_plural = "实时事件"
+        ordering = ["id"]
+        indexes = [
+            models.Index(fields=["recipient", "id"]),
+            models.Index(fields=["event_type", "created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"RealtimeEvent({self.event_type}, {self.target_type}:{self.target_id})"
+
+
 class Notification(models.Model):
     """One-way system notification for a user."""
 

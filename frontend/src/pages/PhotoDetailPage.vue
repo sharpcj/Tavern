@@ -102,6 +102,7 @@ import {
   type PhotoListItem,
 } from '@/api/albums'
 import ReportButton from '@/components/ReportButton.vue'
+import { useRealtimeEvent } from '@/composables/useRealtimeEvents'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -210,6 +211,15 @@ function formatTime(iso: string) {
 
 onMounted(() => load())
 watch(() => route.params.id, () => load())
+useRealtimeEvent((event) => {
+  const currentPhotoId = Number(route.params.id)
+  if (event.type === 'photo.comment.created' && Number(event.payload.photo_id) === currentPhotoId) {
+    load()
+  }
+  if (event.type === 'album.photo.created' && photo.value && Number(event.payload.album_id) === photo.value.album) {
+    load()
+  }
+})
 </script>
 
 <style scoped>

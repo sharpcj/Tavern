@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from .models import Notification
+from .models import Notification, RealtimeEvent
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -31,3 +31,12 @@ class NotificationSerializer(serializers.ModelSerializer):
         if not obj.target_content_type:
             return None
         return f"{obj.target_content_type.app_label}.{obj.target_content_type.model}"
+
+
+class RealtimeEventSerializer(serializers.ModelSerializer):
+    type = serializers.CharField(source="event_type", read_only=True)
+
+    class Meta:
+        model = RealtimeEvent
+        fields = ["id", "type", "target_type", "target_id", "payload", "created_at"]
+        read_only_fields = fields

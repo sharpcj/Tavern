@@ -33,6 +33,7 @@
 import { ElMessage } from 'element-plus'
 import { onMounted, ref } from 'vue'
 import { fetchNotifications, fetchUnreadNotificationCount, markAllNotificationsRead, markNotificationRead, type NotificationItem } from '@/api/notifications'
+import { useRealtimeEvent } from '@/composables/useRealtimeEvents'
 
 const loading = ref(false)
 const activeTab = ref('all')
@@ -68,6 +69,11 @@ function formatTime(iso: string) {
 }
 
 onMounted(() => load())
+useRealtimeEvent((event) => {
+  if (event.type === 'notification.created' || event.type === 'notification.read') {
+    load()
+  }
+})
 </script>
 
 <style scoped>
