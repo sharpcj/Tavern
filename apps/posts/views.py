@@ -68,7 +68,12 @@ class PostListView(generics.ListCreateAPIView):
         uploaded_images = request.FILES.getlist("uploaded_images")
         serializer.validate_uploaded_images(uploaded_images)
         post = serializer.save(author=request.user)
-        publish_event(event_type=RealtimeEventType.POST_CREATED, target_type="post", target_id=post.pk)
+        publish_event(
+            event_type=RealtimeEventType.POST_CREATED,
+            target_type="post",
+            target_id=post.pk,
+            payload={"author_account_id": str(request.user.account_id)},
+        )
         return Response(PostDetailSerializer(post, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
@@ -187,6 +192,14 @@ class CommentListView(generics.ListCreateAPIView):
             target_id=comment.pk,
             payload={"post_id": post.pk},
         )
+        if post.author != request.user:
+            create_notification(
+                recipient=post.author,
+                notification_type=NotificationType.COMMENT_REPLY,
+                title="你的动态收到了评论",
+                content=comment.content[:200],
+                target=comment,
+            )
         return Response(CommentSerializer(comment, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 

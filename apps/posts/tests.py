@@ -11,6 +11,7 @@ from apps.accounts.models import ReviewStatus
 from apps.posts.models import Post
 from apps.comments.models import Comment
 from apps.common.enums import ContentStatus
+from apps.notifications.models import Notification, NotificationType, RealtimeEvent, RealtimeEventType
 
 User = get_user_model()
 
@@ -45,6 +46,19 @@ class PostTests(APITestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Post.objects.count(), 1)
+
+    def test_create_post_realtime_event_includes_author_account_id(self):
+        self.client.force_authenticate(self.user)
+        resp = self.client.post(
+            reverse("post-list"),
+            {"content": "实时刷新测试", "category": "chat", "display_mode": "real_name"},
+            format="json",
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        event = RealtimeEvent.objects.get(event_type=RealtimeEventType.POST_CREATED)
+        self.assertEqual(event.target_id, str(resp.data["id"]))
+        self.assertEqual(event.payload["author_account_id"], str(self.user.account_id))
 
     def test_post_list_shows_published(self):
         Post.objects.create(author=self.user, content="测试动态", category="chat")
@@ -142,6 +156,31 @@ class CommentTests(APITestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Comment.objects.count(), 1)
+
+    def test_comment_on_others_post_notifies_post_author(self):
+        self.client.force_authenticate(self.other)
+        resp = self.client.post(
+            reverse("comment-list", kwargs={"post_pk": self.post.pk}),
+            {"content": "我来评论你的动态", "display_mode": "real_name"},
+            format="json",
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        notification = Notification.objects.get(recipient=self.user, notification_type=NotificationType.COMMENT_REPLY)
+        self.assertEqual(notification.title, "你的动态收到了评论")
+        self.assertEqual(notification.content, "我来评论你的动态")
+        self.assertEqual(notification.target_object_id, resp.data["id"])
+
+    def test_comment_on_own_post_does_not_notify_self(self):
+        self.client.force_authenticate(self.user)
+        resp = self.client.post(
+            reverse("comment-list", kwargs={"post_pk": self.post.pk}),
+            {"content": "自己补充", "display_mode": "real_name"},
+            format="json",
+        )
+
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertFalse(Notification.objects.filter(recipient=self.user).exists())
 
     def test_reply_to_comment(self):
         comment = Comment.objects.create(

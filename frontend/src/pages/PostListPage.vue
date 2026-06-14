@@ -58,7 +58,9 @@ import { onMounted, ref } from 'vue'
 import AnnouncementBanner from '@/components/AnnouncementBanner.vue'
 import { useRealtimeEvent } from '@/composables/useRealtimeEvents'
 import { fetchPosts, POST_CATEGORIES, type PostListItem } from '@/api/posts'
+import { useAuthStore } from '@/stores/auth'
 
+const authStore = useAuthStore()
 const loading = ref(false)
 const posts = ref<PostListItem[]>([])
 const total = ref(0)
@@ -94,6 +96,10 @@ function refreshNewPosts() {
   loadPosts()
 }
 
+function isCurrentUserPostEvent(payload: Record<string, unknown>) {
+  return payload.author_account_id === authStore.currentUser?.account_id
+}
+
 function formatTime(iso: string) {
   return new Date(iso).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
@@ -105,6 +111,10 @@ function truncate(text: string, max: number) {
 onMounted(() => loadPosts())
 useRealtimeEvent((event) => {
   if (event.type === 'post.created') {
+    if (isCurrentUserPostEvent(event.payload)) {
+      refreshNewPosts()
+      return
+    }
     pendingNewPostCount.value += 1
     return
   }
