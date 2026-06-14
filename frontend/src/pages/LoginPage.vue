@@ -19,11 +19,12 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
 import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const submitting = ref(false)
 const form = reactive({
@@ -39,8 +40,13 @@ async function submit() {
   submitting.value = true
   try {
     await authStore.login(form.email, form.password)
-    if (authStore.isReviewApproved) {
-      router.push('/')
+    if (authStore.isReviewApproved && authStore.isAccountNormal) {
+      const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+      if (redirect === '/login' || redirect === '/register') {
+        router.push('/')
+      } else {
+        router.push(redirect)
+      }
     } else {
       router.push('/review-status')
     }

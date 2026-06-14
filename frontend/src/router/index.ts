@@ -39,6 +39,7 @@ declare module 'vue-router' {
     requiresApproved?: boolean
     allowRestricted?: boolean
     requiresModerator?: boolean
+    guestOnly?: boolean
   }
 }
 
@@ -50,9 +51,9 @@ const router = createRouter({
       component: DefaultLayout,
       children: [
         { path: '', name: 'home', component: PostListPage, meta: { requiresAuth: true, requiresApproved: true } },
-        { path: 'register', name: 'register', component: RegisterPage, meta: { requiresAuth: false } },
+        { path: 'register', name: 'register', component: RegisterPage, meta: { requiresAuth: false, guestOnly: true } },
         { path: 'community-convention', name: 'community-convention', component: CommunityConventionPage, meta: { requiresAuth: false } },
-        { path: 'login', name: 'login', component: LoginPage, meta: { requiresAuth: false } },
+        { path: 'login', name: 'login', component: LoginPage, meta: { requiresAuth: false, guestOnly: true } },
         { path: 'review-status', name: 'review-status', component: ReviewStatusPage, meta: { requiresAuth: true } },
         { path: 'profile/edit', name: 'profile-edit', component: ProfileEditPage, meta: { requiresAuth: true, requiresApproved: true } },
         { path: 'classmates', name: 'classmate-list', component: ClassmateListPage, meta: { requiresAuth: true, requiresApproved: true } },
@@ -96,6 +97,15 @@ router.beforeEach(async (to, _from, next) => {
 
   if (authStore.isAuthenticated && !authStore.userLoaded) {
     await authStore.loadCurrentUser()
+  }
+
+  if (to.meta.guestOnly && authStore.isAuthenticated) {
+    if (authStore.isReviewApproved && authStore.isAccountNormal) {
+      next({ name: 'home' })
+    } else {
+      next({ name: 'review-status' })
+    }
+    return
   }
 
   const requiresAuth = to.meta.requiresAuth !== false
