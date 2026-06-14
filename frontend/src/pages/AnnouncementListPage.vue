@@ -2,7 +2,7 @@
   <section class="page-card">
     <div class="feed-header">
       <h1>公告</h1>
-      <el-button type="primary" @click="$router.push('/announcements/create')">发布公告</el-button>
+      <el-button v-if="authStore.isModeratorOrAbove" type="primary" @click="$router.push('/announcements/create')">发布公告</el-button>
     </div>
 
     <div v-loading="loading">
@@ -32,7 +32,9 @@ import { onMounted, ref } from 'vue'
 
 import { fetchAnnouncements, type AnnouncementListItem } from '@/api/announcements'
 import { useRealtimeEvent } from '@/composables/useRealtimeEvents'
+import { useAuthStore } from '@/stores/auth'
 
+const authStore = useAuthStore()
 const loading = ref(false)
 const announcements = ref<AnnouncementListItem[]>([])
 const total = ref(0)

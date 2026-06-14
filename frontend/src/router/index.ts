@@ -63,7 +63,7 @@ const router = createRouter({
         { path: 'activities/create', name: 'activity-create', component: ActivityCreatePage, meta: { requiresAuth: true, requiresApproved: true } },
         { path: 'activities/:id', name: 'activity-detail', component: ActivityDetailPage, meta: { requiresAuth: true, requiresApproved: true } },
         { path: 'announcements', name: 'announcement-list', component: AnnouncementListPage, meta: { requiresAuth: true, requiresApproved: true } },
-        { path: 'announcements/create', name: 'announcement-create', component: AnnouncementCreatePage, meta: { requiresAuth: true, requiresApproved: true } },
+        { path: 'announcements/create', name: 'announcement-create', component: AnnouncementCreatePage, meta: { requiresAuth: true, requiresApproved: true, requiresModerator: true } },
         { path: 'announcements/:id', name: 'announcement-detail', component: AnnouncementDetailPage, meta: { requiresAuth: true, requiresApproved: true } },
         { path: 'albums', name: 'album-list', component: AlbumListPage, meta: { requiresAuth: true, requiresApproved: true } },
         { path: 'albums/create', name: 'album-create', component: AlbumCreatePage, meta: { requiresAuth: true, requiresApproved: true } },

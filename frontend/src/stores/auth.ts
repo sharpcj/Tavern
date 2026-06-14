@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-import { fetchCurrentUser, login, type CurrentUser } from '@/api/auth'
+import { fetchCurrentUser, login, refreshAccessToken, type CurrentUser, type TokenPair } from '@/api/auth'
 
 const ACCESS_TOKEN_KEY = 'tavern_access_token'
 const REFRESH_TOKEN_KEY = 'tavern_refresh_token'
@@ -26,18 +26,41 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async login(email: string, password: string) {
       const tokens = await login(email, password)
+      this.saveTokens(tokens)
+      await this.loadCurrentUser()
+    },
+    saveTokens(tokens: TokenPair) {
       this.accessToken = tokens.access
       this.refreshToken = tokens.refresh
       localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access)
       localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh)
-      await this.loadCurrentUser()
+    },
+    async refreshSession() {
+      if (!this.refreshToken) return false
+      try {
+        const tokens = await refreshAccessToken(this.refreshToken)
+        this.saveTokens(tokens)
+        return true
+      } catch {
+        return false
+      }
     },
     async loadCurrentUser() {
       try {
         this.currentUser = await fetchCurrentUser()
         this.userLoaded = true
       } catch {
-        this.clearAuth()
+        const refreshed = await this.refreshSession()
+        if (!refreshed) {
+          this.clearAuth()
+          return
+        }
+        try {
+          this.currentUser = await fetchCurrentUser()
+          this.userLoaded = true
+        } catch {
+          this.clearAuth()
+        }
       }
     },
     logout() {

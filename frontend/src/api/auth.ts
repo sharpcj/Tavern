@@ -45,6 +45,11 @@ export async function login(email: string, password: string): Promise<TokenPair>
   return response.data
 }
 
+export async function refreshAccessToken(refresh: string): Promise<TokenPair> {
+  const response = await apiClient.post<TokenPair>('/v1/auth/token/refresh/', { refresh })
+  return response.data
+}
+
 export async function fetchCurrentUser(): Promise<CurrentUser> {
   const response = await apiClient.get<CurrentUser>('/v1/auth/me/')
   return response.data
