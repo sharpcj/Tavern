@@ -5,6 +5,7 @@ export interface ProfileData {
   nickname: string
   email: string
   avatar_url: string
+  avatar_visible: boolean
   city: string
   occupation: string
   bio: string

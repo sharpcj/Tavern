@@ -64,12 +64,13 @@ class ProfileTests(APITestCase):
         self.client.force_authenticate(self.user)
         resp = self.client.patch(
             reverse("my-profile"),
-            {"city": "北京", "occupation": "工程师", "birthday_month": 3},
+            {"city": "北京", "occupation": "工程师", "birthday_month": 3, "avatar_visible": False},
             format="json",
         )
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.data["city"], "北京")
         self.assertEqual(resp.data["birthday_month"], 3)
+        self.assertFalse(resp.data["avatar_visible"])
 
     def test_upload_avatar_updates_profile_avatar_url(self):
         self.client.force_authenticate(self.user)
@@ -188,6 +189,29 @@ class ClassmateDirectoryTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIsNone(resp.data["phone"])
 
+    def test_classmate_list_hides_private_avatar(self):
+        Profile.objects.filter(user=self.other).update(
+            avatar_url="/media/avatars/private.png",
+            avatar_visible=False,
+        )
+        self.client.force_authenticate(self.user)
+        resp = self.client.get(reverse("classmate-list"))
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        other_item = next(item for item in resp.data["results"] if item["real_name"] == "李四")
+        self.assertEqual(other_item["avatar_url"], "")
+
+    def test_classmate_detail_hides_private_avatar_from_others(self):
+        Profile.objects.filter(user=self.other).update(
+            avatar_url="/media/avatars/private.png",
+            avatar_visible=False,
+        )
+        self.client.force_authenticate(self.user)
+        resp = self.client.get(
+            reverse("classmate-detail", kwargs={"account_id": self.other.account_id})
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data["avatar_url"], "")
+
     def test_classmate_detail_selected_visibility(self):
         Profile.objects.filter(user=self.other).update(
             phone_visibility=ContactVisibility.SELECTED,
@@ -210,3 +234,15 @@ class ClassmateDirectoryTests(APITestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         # Own detail should show email (from User model)
         self.assertEqual(resp.data["email"], "user@example.com")
+
+    def test_own_detail_keeps_private_avatar_visible_to_self(self):
+        Profile.objects.filter(user=self.user).update(
+            avatar_url="/media/avatars/private.png",
+            avatar_visible=False,
+        )
+        self.client.force_authenticate(self.user)
+        resp = self.client.get(
+            reverse("classmate-detail", kwargs={"account_id": self.user.account_id})
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertTrue(resp.data["avatar_url"])

@@ -26,6 +26,7 @@ class Profile(models.Model):
 
     # --- public profile fields ---
     avatar_url = models.URLField("头像链接", blank=True, max_length=512)
+    avatar_visible = models.BooleanField("头像公开展示", default=True)
     city = models.CharField("当前城市", max_length=64, blank=True)
     occupation = models.CharField("职业或行业", max_length=128, blank=True)
     bio = models.TextField("个人简介", blank=True)

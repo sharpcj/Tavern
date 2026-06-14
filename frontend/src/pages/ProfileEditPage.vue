@@ -26,6 +26,10 @@
           </div>
         </div>
       </el-form-item>
+      <el-form-item label="头像公开展示">
+        <el-switch v-model="form.avatar_visible" active-text="公开" inactive-text="不公开" />
+        <div class="field-tip">关闭后，其他同学在通讯录、同学详情、生日等页面会看到默认头像；你自己仍可在个人资料页看到已上传头像。</div>
+      </el-form-item>
       <el-row :gutter="16">
         <el-col :span="12">
           <el-form-item label="当前城市">
@@ -134,6 +138,7 @@ const form = reactive<ProfileData>({
   nickname: '',
   email: '',
   avatar_url: '',
+  avatar_visible: true,
   city: '',
   occupation: '',
   bio: '',
@@ -202,6 +207,7 @@ async function submit() {
       city: form.city,
       occupation: form.occupation,
       bio: form.bio,
+      avatar_visible: form.avatar_visible,
       birthday_month: form.birthday_month,
       show_birthday: form.show_birthday,
       phone: form.phone,

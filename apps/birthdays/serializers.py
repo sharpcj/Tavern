@@ -8,11 +8,12 @@ from rest_framework import serializers
 from apps.accounts.models import AccountStatus, ReviewStatus
 from apps.common.enums import ContentStatus
 from apps.profiles.models import Profile
+from apps.profiles.serializers import ProfileAvatarUrlMixin
 
 from .models import BirthdayWish
 
 
-class BirthdayClassmateSerializer(serializers.Serializer):
+class BirthdayClassmateSerializer(ProfileAvatarUrlMixin, serializers.Serializer):
     account_id = serializers.UUIDField(source="user.account_id")
     real_name = serializers.CharField(source="user.real_name")
     nickname = serializers.CharField(source="user.nickname")

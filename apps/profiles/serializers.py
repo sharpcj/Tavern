@@ -48,7 +48,11 @@ class ProfileAvatarUrlMixin:
     def to_representation(self, instance):
         data = super().to_representation(instance)
         request = self.context.get("request")
-        data["avatar_url"] = sign_stored_media_url(data.get("avatar_url", ""), request=request)
+        viewer = getattr(request, "user", None)
+        if not instance.avatar_visible and viewer != instance.user:
+            data["avatar_url"] = ""
+        else:
+            data["avatar_url"] = sign_stored_media_url(data.get("avatar_url", ""), request=request)
         return data
 
 
@@ -66,6 +70,7 @@ class ProfileSerializer(ProfileAvatarUrlMixin, serializers.ModelSerializer):
             "nickname",
             "email",
             "avatar_url",
+            "avatar_visible",
             "city",
             "occupation",
             "bio",
