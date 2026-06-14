@@ -8,16 +8,17 @@
 
 M01 属于首发项目的第一阶段，优先级为 P0。后续账号审核、权限隐私、通讯录、动态、活动、相册、生日祝福、举报治理和部署上线都依赖该基础骨架。
 
-## 系统背景
+## 当前状态
 
-当前仓库是一个 Django 初始工程，主要现状如下：
+本文档最初用于 M01 实施前评审；当前仓库已经完成 M01，并在后续模块中持续扩展。当前工程基础如下：
 
-- 根目录存在 `manage.py`、`pyproject.toml`、`tavern/settings.py`、`tavern/urls.py`。
-- `pyproject.toml` 当前只声明 `django>=6.0.6`。
-- 还没有领域 apps、DRF、JWT、OpenAPI、CORS、MySQL/Redis 开发配置、前端工程、Docker Compose 和环境变量示例。
-- 已有 `docs/classmate-community-hld.md` 和 `docs/project-development-module-plan.md` 作为架构与模块规划依据。
+- 根目录存在 `manage.py`、`pyproject.toml`、`tavern/urls.py` 和 `tavern/settings/` 分层配置。
+- `pyproject.toml` 已包含 Django、DRF、SimpleJWT、drf-spectacular、django-filter、django-cors-headers、Pillow、PyMySQL、Redis、Uvicorn 等依赖。
+- 后端已按 `apps/` 领域模块拆分，覆盖 accounts、profiles、posts、comments、activities、albums、birthdays、announcements、reports、moderation、audit_logs、notifications、common。
+- 前端已完成 Vue 3 + TypeScript + Vite + Element Plus + Pinia + Vue Router 工程，并包含业务页面、管理后台、移动端适配和 SSE 客户端。
+- Docker 开发环境、生产部署配置、Nginx 配置、备份 / 恢复脚本和生产环境变量模板已落地。
 
-M01 需要在不实现业务模型的前提下，完成后端、前端、开发环境、文档和验证链路的基础搭建。
+因此，本文件保留为 M01 的历史技术方案和验收依据；最新总体架构以 `README.md`、`docs/classmate-community-hld.md` 和 `docs/project-development-module-plan.md` 的当前状态说明为准。
 
 # 二、需求描述
 
@@ -48,7 +49,7 @@ M01 不实现以下内容：
 
 - 不实现用户注册、登录、审核业务逻辑。
 - 不创建自定义用户模型；该内容属于 M02，但 M01 要预留 `accounts` app。
-- 不实现权限矩阵、隐私字段过滤、匿名展示和活动实名；这些属于 M03-M07。
+- 不实现权限矩阵、隐私字段过滤、身份展示和活动实名；这些属于 M03-M07。
 - 不接入生产短信、邮件、对象存储或真实线上域名。
 - 不实现业务页面，只提供前端基础布局、路由和占位页面。
 

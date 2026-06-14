@@ -26,7 +26,7 @@ M05 的目标是将这些公共能力提取到 `apps/common/`，并补充媒体�
 | 模块规划 | 媒体受控访问：图片和附件不提供永久公开敏感直链 |
 | 模块规划 | 内容状态枚举：draft、published、hidden、deleted、pending_review |
 | 模块规划 | 软删除基础字段：deleted_at、deleted_by、delete_reason |
-| 模块规划 | 匿名展示工具：根据 display_mode 和当前用户角色返回展示身份 |
+| 模块规划 | 身份展示工具：根据 display_mode 返回真实姓名或昵称展示身份，后台保留真实作者 |
 | 现有代码 | DisplayMode 枚举需从 posts 移到 common |
 | 现有代码 | Post 和 Comment 的软删除字段需统一为公共 Mixin |
 
