@@ -6,6 +6,7 @@ export interface ProfileData {
   email: string
   avatar_url: string
   avatar_visible: boolean
+  real_name_visible: boolean
   city: string
   occupation: string
   bio: string

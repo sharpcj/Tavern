@@ -17,6 +17,8 @@ class BirthdayWish(SoftDeletableModel):
         on_delete=models.PROTECT,
         related_name="received_birthday_wishes",
         verbose_name="被祝福人",
+        null=True,
+        blank=True,
     )
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -41,7 +43,8 @@ class BirthdayWish(SoftDeletableModel):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"BirthdayWish({self.author.real_name} -> {self.recipient.real_name})"
+        recipient_name = self.recipient.real_name if self.recipient_id else "本月生日同学"
+        return f"BirthdayWish({self.author.real_name} -> {recipient_name})"
 
     @property
     def display_name(self) -> str:

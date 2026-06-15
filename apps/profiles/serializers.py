@@ -71,6 +71,7 @@ class ProfileSerializer(ProfileAvatarUrlMixin, serializers.ModelSerializer):
             "email",
             "avatar_url",
             "avatar_visible",
+            "real_name_visible",
             "city",
             "occupation",
             "bio",

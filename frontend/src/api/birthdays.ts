@@ -4,6 +4,7 @@ export interface BirthdayClassmate {
   account_id: string
   real_name: string
   nickname: string
+  display_name: string
   avatar_url: string
   city: string
   birthday_month: number
@@ -11,7 +12,7 @@ export interface BirthdayClassmate {
 
 export interface BirthdayWish {
   id: number
-  recipient_account_id: string
+  recipient_account_id: string | null
   recipient_name: string
   display_name: string
   content: string
@@ -37,11 +38,11 @@ export async function fetchBirthdayWishes(params?: { recipient?: string; page?: 
 }
 
 export async function createBirthdayWish(data: {
-  recipient_account_id: string
+  recipient_account_ids?: string[]
   content: string
   display_mode: string
-}): Promise<BirthdayWish> {
-  const resp = await apiClient.post<BirthdayWish>('/v1/birthdays/wishes/', data)
+}): Promise<BirthdayWish[]> {
+  const resp = await apiClient.post<BirthdayWish[]>('/v1/birthdays/wishes/', data)
   return resp.data
 }
 

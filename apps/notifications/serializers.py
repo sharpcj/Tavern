@@ -47,6 +47,8 @@ class NotificationSerializer(serializers.ModelSerializer):
             return f"/activities/{target.pk}"
         if target_type == "announcements.announcement":
             return f"/announcements/{target.pk}"
+        if target_type == "birthdays.birthdaywish":
+            return "/birthdays"
         if target_type == "accounts.user":
             return "/review-status"
         return None

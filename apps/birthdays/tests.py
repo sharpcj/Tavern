@@ -10,6 +10,7 @@ from rest_framework.test import APITestCase
 
 from apps.accounts.models import AccountStatus, ReviewStatus, UserRole
 from apps.common.enums import ContentStatus, DisplayMode
+from apps.notifications.models import Notification
 from apps.profiles.models import Profile
 
 from .models import BirthdayWish
@@ -34,6 +35,7 @@ class BirthdayTests(APITestCase):
         cls.user.save()
         cls.user.profile.birthday_month = current_month
         cls.user.profile.show_birthday = True
+        cls.user.profile.real_name_visible = True
         cls.user.profile.save()
 
         cls.recipient = User.objects.create_user(
@@ -50,6 +52,8 @@ class BirthdayTests(APITestCase):
         cls.recipient.profile.birthday_month = current_month
         cls.recipient.profile.show_birthday = True
         cls.recipient.profile.city = "上海"
+        cls.recipient.profile.avatar_url = "https://example.com/recipient.png"
+        cls.recipient.profile.avatar_visible = False
         cls.recipient.profile.save()
 
         cls.hidden_birthday_user = User.objects.create_user(
@@ -80,10 +84,13 @@ class BirthdayTests(APITestCase):
         self.client.force_authenticate(self.user)
         resp = self.client.get(reverse("birthday-current-month"))
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        names = {item["real_name"] for item in resp.data["results"]}
+        names = {item["display_name"] for item in resp.data["results"]}
         self.assertIn("张三", names)
-        self.assertIn("李四", names)
+        self.assertIn("四四", names)
         self.assertNotIn("王五", names)
+        recipient_item = next(item for item in resp.data["results"] if item["account_id"] == str(self.recipient.account_id))
+        self.assertEqual(recipient_item["real_name"], "")
+        self.assertEqual(recipient_item["avatar_url"], "")
         first = resp.data["results"][0]
         self.assertIn("birthday_month", first)
         self.assertNotIn("birthday", first)
@@ -105,7 +112,53 @@ class BirthdayTests(APITestCase):
         wish = BirthdayWish.objects.get()
         self.assertEqual(wish.recipient, self.recipient)
         self.assertEqual(wish.author, self.user)
-        self.assertEqual(resp.data["display_name"], self.user.nickname)
+        self.assertEqual(resp.data[0]["display_name"], self.user.nickname)
+
+    def test_create_birthday_wish_can_select_multiple_recipients(self):
+        self.client.force_authenticate(self.user)
+        resp = self.client.post(
+            reverse("birthday-wish-list"),
+            {
+                "recipient_account_ids": [str(self.recipient.account_id), str(self.user.account_id)],
+                "content": "生日快乐！",
+                "display_mode": DisplayMode.NICKNAME,
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(BirthdayWish.objects.count(), 2)
+        self.assertEqual(len(resp.data), 2)
+
+    def test_create_birthday_wish_without_specific_recipient(self):
+        self.client.force_authenticate(self.user)
+        resp = self.client.post(
+            reverse("birthday-wish-list"),
+            {"content": "祝本月生日同学快乐！", "display_mode": DisplayMode.REAL_NAME},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        wish = BirthdayWish.objects.get()
+        self.assertIsNone(wish.recipient)
+        self.assertIsNone(resp.data[0]["recipient_account_id"])
+        self.assertEqual(resp.data[0]["recipient_name"], "本月生日同学")
+
+    def test_selected_birthday_wish_recipient_receives_notification(self):
+        self.client.force_authenticate(self.user)
+        resp = self.client.post(
+            reverse("birthday-wish-list"),
+            {
+                "recipient_account_ids": [str(self.recipient.account_id)],
+                "content": "生日快乐！",
+                "display_mode": DisplayMode.NICKNAME,
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        notification = Notification.objects.get(recipient=self.recipient)
+        self.assertEqual(notification.title, "你收到了生日祝福")
+        self.client.force_authenticate(self.recipient)
+        list_resp = self.client.get(reverse("notification-list"))
+        self.assertEqual(list_resp.data["results"][0]["target_url"], "/birthdays")
 
     def test_cannot_wish_to_user_without_birthday_display(self):
         self.client.force_authenticate(self.user)
@@ -127,7 +180,7 @@ class BirthdayTests(APITestCase):
         resp = self.client.get(reverse("birthday-wish-list"), {"recipient": str(self.recipient.account_id)})
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(resp.data["results"]), 1)
-        self.assertEqual(resp.data["results"][0]["recipient_name"], "李四")
+        self.assertEqual(resp.data["results"][0]["recipient_name"], "四四")
 
     def test_author_can_delete_wish(self):
         wish = BirthdayWish.objects.create(recipient=self.recipient, author=self.user, content="生日快乐")

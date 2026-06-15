@@ -7,11 +7,10 @@
     <div v-loading="loadingBirthdays">
       <el-empty v-if="!loadingBirthdays && birthdays.length === 0" description="本月暂无同学开启生日展示" />
       <div class="birthday-grid">
-        <div v-for="item in birthdays" :key="item.account_id" class="birthday-card" :class="{ selected: selectedRecipient === item.account_id }" @click="selectRecipient(item.account_id)">
+        <div v-for="item in birthdays" :key="item.account_id" class="birthday-card" :class="{ selected: selectedRecipientIds.includes(item.account_id) }" @click="toggleRecipient(item.account_id)">
           <UserAvatar :src="item.avatar_url" :size="48" />
           <div>
-            <strong>{{ item.real_name }}</strong>
-            <span v-if="item.nickname" class="muted">（{{ item.nickname }}）</span>
+            <strong>{{ item.display_name }}</strong>
             <div class="muted">{{ item.birthday_month }} 月生日<span v-if="item.city"> · {{ item.city }}</span></div>
           </div>
         </div>
@@ -22,8 +21,14 @@
       <h2>送上祝福</h2>
       <el-form label-position="top" @submit.prevent="submitWish">
         <el-form-item label="祝福对象">
-          <el-select v-model="selectedRecipient" placeholder="选择本月生日同学" style="width: 100%">
-            <el-option v-for="item in birthdays" :key="item.account_id" :label="item.real_name" :value="item.account_id" />
+          <el-select v-model="selectedRecipientIds" multiple clearable collapse-tags collapse-tags-tooltip placeholder="可选择多个本月生日同学，也可以不选" style="width: 100%">
+            <el-option v-for="item in birthdays" :key="item.account_id" :label="item.display_name" :value="item.account_id" />
+          </el-select>
+          <div class="field-tip">不选择具体同学时，祝福会发布给“本月生日同学”，不会产生定向通知。</div>
+        </el-form-item>
+        <el-form-item label="快捷祝福语">
+          <el-select v-model="selectedQuickWish" clearable placeholder="选择一条默认祝福语，或直接手动输入" style="width: 100%" @change="applyQuickWish">
+            <el-option v-for="phrase in defaultBirthdayWishes" :key="phrase" :label="phrase" :value="phrase" />
           </el-select>
         </el-form-item>
         <el-form-item label="祝福内容">
@@ -69,8 +74,21 @@ const loadingWishes = ref(false)
 const submitting = ref(false)
 const birthdays = ref<BirthdayClassmate[]>([])
 const wishes = ref<BirthdayWish[]>([])
-const selectedRecipient = ref('')
+const selectedRecipientIds = ref<string[]>([])
+const selectedQuickWish = ref('')
 const wishForm = reactive({ content: '', display_mode: 'real_name' })
+const defaultBirthdayWishes = [
+  '愿你新的一岁平安顺遂，日子明亮又自在。',
+  '生日快乐，愿每一个小愿望都慢慢实现。',
+  '祝你一路有光，所遇皆暖，所行皆坦。',
+  '愿今天的快乐延续到往后的每一天。',
+  '新的一岁，愿你有热爱、有收获，也有好好休息的余地。',
+  '祝你生日快乐，生活有惊喜，心里有底气。',
+  '愿这一岁比上一岁更从容，也更接近想成为的自己。',
+  '祝福送到，愿你健康、开心、被生活温柔以待。',
+  '愿你新的一岁，眼里有星河，身边有良友。',
+  '生日快乐，愿岁月不负努力，也不缺温柔。',
+]
 
 async function loadBirthdays() {
   loadingBirthdays.value = true
@@ -88,13 +106,19 @@ async function loadWishes() {
   } finally { loadingWishes.value = false }
 }
 
-function selectRecipient(accountId: string) { selectedRecipient.value = accountId }
+function toggleRecipient(accountId: string) {
+  if (selectedRecipientIds.value.includes(accountId)) {
+    selectedRecipientIds.value = selectedRecipientIds.value.filter(id => id !== accountId)
+  } else {
+    selectedRecipientIds.value = [...selectedRecipientIds.value, accountId]
+  }
+}
+
+function applyQuickWish(value: string) {
+  if (value) wishForm.content = value
+}
 
 async function submitWish() {
-  if (!selectedRecipient.value) {
-    ElMessage.warning('请先选择祝福对象')
-    return
-  }
   if (!wishForm.content.trim()) {
     ElMessage.warning('请输入祝福内容')
     return
@@ -102,12 +126,13 @@ async function submitWish() {
   submitting.value = true
   try {
     await createBirthdayWish({
-      recipient_account_id: selectedRecipient.value,
+      recipient_account_ids: selectedRecipientIds.value,
       content: wishForm.content,
       display_mode: wishForm.display_mode,
     })
     ElMessage.success('祝福已发布')
     wishForm.content = ''
+    selectedQuickWish.value = ''
     await loadWishes()
   } finally { submitting.value = false }
 }

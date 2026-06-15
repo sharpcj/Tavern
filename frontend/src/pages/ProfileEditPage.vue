@@ -16,6 +16,10 @@
         <el-input v-model="form.nickname" placeholder="同学之间怎么称呼你" />
         <div class="field-tip">发动态、评论时默认显示的名称，可随时修改。</div>
       </el-form-item>
+      <el-form-item label="真实姓名公开展示">
+        <el-switch v-model="form.real_name_visible" active-text="公开" inactive-text="不公开" />
+        <div class="field-tip">关闭后，生日祝福等偏公开展示位置优先显示昵称，不额外展示真实姓名。</div>
+      </el-form-item>
 
       <el-form-item label="头像">
         <div class="avatar-upload-row">
@@ -139,6 +143,7 @@ const form = reactive<ProfileData>({
   email: '',
   avatar_url: '',
   avatar_visible: true,
+  real_name_visible: false,
   city: '',
   occupation: '',
   bio: '',
@@ -208,6 +213,7 @@ async function submit() {
       occupation: form.occupation,
       bio: form.bio,
       avatar_visible: form.avatar_visible,
+      real_name_visible: form.real_name_visible,
       birthday_month: form.birthday_month,
       show_birthday: form.show_birthday,
       phone: form.phone,

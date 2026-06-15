@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from apps.accounts.models import AccountStatus, ReviewStatus, UserRole
 from apps.common.enums import ContentStatus
 from apps.common.permissions import IsApprovedClassmate
+from apps.notifications.services import NotificationType, create_notification
 from apps.profiles.models import Profile
 
 from .models import BirthdayWish
@@ -48,7 +49,9 @@ class BirthdayWishListCreateView(generics.ListCreateAPIView):
         return BirthdayWishSerializer
 
     def get_queryset(self):
-        qs = BirthdayWish.objects.select_related("recipient", "author").filter(status=ContentStatus.PUBLISHED)
+        qs = BirthdayWish.objects.select_related("recipient", "recipient__profile", "author").filter(
+            status=ContentStatus.PUBLISHED
+        )
         recipient = self.request.query_params.get("recipient")
         if recipient:
             qs = qs.filter(recipient__account_id=recipient)
@@ -66,8 +69,18 @@ class BirthdayWishListCreateView(generics.ListCreateAPIView):
     def post(self, request, *args, **kwargs):
         serializer = BirthdayWishCreateSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        wish = serializer.save()
-        return Response(BirthdayWishSerializer(wish, context={"request": request}).data, status=status.HTTP_201_CREATED)
+        wishes = serializer.save()
+        for wish in wishes:
+            if wish.recipient_id and wish.recipient != request.user:
+                create_notification(
+                    recipient=wish.recipient,
+                    notification_type=NotificationType.SYSTEM,
+                    title="你收到了生日祝福",
+                    content=f"{wish.display_name} 给你送上了生日祝福。",
+                    target=wish,
+                )
+        response_serializer = BirthdayWishSerializer(wishes, many=True, context={"request": request})
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 class BirthdayWishDeleteView(APIView):
