@@ -4,7 +4,7 @@
 
     <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent="submit">
       <el-form-item label="活动类型" prop="activity_type">
-        <el-radio-group v-model="form.activity_type">
+        <el-radio-group v-model="form.activity_type" class="activity-type-group">
           <el-radio v-for="t in ACTIVITY_TYPES" :key="t.value" :value="t.value">{{ t.label }}</el-radio>
         </el-radio-group>
       </el-form-item>
@@ -158,11 +158,37 @@ async function submit() {
 <style scoped>
 .field-tip { margin-top: 4px; color: #6b7280; font-size: 13px; line-height: 1.5; }
 .vote-option-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.vote-option-row .el-input { flex: 1; min-width: 0; }
 .form-actions { display: flex; gap: 8px; }
 
 @media (max-width: 640px) {
-  :deep(.el-radio-group) { display: grid; gap: 8px; }
-  :deep(.el-input-number) { width: 100%; }
+  .activity-type-group {
+    display: grid;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .activity-type-group :deep(.el-radio) {
+    height: auto;
+    margin-right: 0;
+    line-height: 1.5;
+    white-space: normal;
+  }
+
+  :deep(.el-input-number),
+  :deep(.el-date-editor),
+  :deep(.el-input) {
+    width: 100%;
+  }
+
+  :deep(.el-form-item) {
+    margin-bottom: 18px;
+  }
+
+  :deep(.el-form-item__content) {
+    min-width: 0;
+  }
+
   .vote-option-row { flex-direction: column; }
   .vote-option-row .el-button { width: 100%; margin-left: 0; }
   .form-actions { flex-direction: column; }

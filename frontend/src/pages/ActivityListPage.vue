@@ -16,8 +16,10 @@
       <el-empty v-if="!loading && activities.length === 0" description="暂无活动" />
       <div v-for="act in activities" :key="act.id" class="activity-card" @click="$router.push(`/activities/${act.id}`)">
         <div class="card-header">
-          <el-tag :type="typeTag(act.activity_type)" size="small">{{ act.activity_type_display }}</el-tag>
-          <el-tag :type="statusTag(act.status)" size="small">{{ act.status_display }}</el-tag>
+          <div class="card-tags">
+            <el-tag :type="typeTag(act.activity_type)" size="small">{{ act.activity_type_display }}</el-tag>
+            <el-tag :type="statusTag(act.status)" size="small">{{ act.status_display }}</el-tag>
+          </div>
           <span class="card-title">{{ act.title }}</span>
         </div>
         <div class="card-meta">
@@ -70,7 +72,57 @@ onMounted(() => load())
 .activity-card { padding: 16px; margin-bottom: 10px; border: 1px solid #e5e7eb; border-radius: 12px; cursor: pointer; transition: box-shadow 0.2s; }
 .activity-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
 .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.card-title { font-weight: 600; font-size: 16px; }
-.card-meta { display: flex; gap: 16px; font-size: 13px; color: #6b7280; }
+.card-tags { display: flex; flex: 0 0 auto; gap: 8px; }
+.card-title { min-width: 0; font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
+.card-meta { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: #6b7280; }
+.card-meta span { overflow-wrap: anywhere; }
 .pagination { margin-top: 20px; justify-content: center; }
+
+@media (max-width: 640px) {
+  .feed-header {
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .feed-header .el-button {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .filter-bar {
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    white-space: nowrap;
+  }
+
+  .filter-bar :deep(.el-radio-button) {
+    flex: 0 0 auto;
+  }
+
+  .activity-card {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .card-header {
+    display: grid;
+    gap: 8px;
+  }
+
+  .card-tags {
+    flex-wrap: wrap;
+  }
+
+  .card-title {
+    line-height: 1.45;
+  }
+
+  .card-meta {
+    display: grid;
+    gap: 5px;
+    line-height: 1.5;
+  }
+}
 </style>
