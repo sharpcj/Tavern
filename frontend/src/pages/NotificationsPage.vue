@@ -8,7 +8,7 @@
       <el-button type="primary" :disabled="unreadCount === 0" @click="markAllRead">全部已读</el-button>
     </div>
 
-    <el-tabs v-model="activeTab" @tab-change="load">
+    <el-tabs v-model="activeTab" @tab-change="load()">
       <el-tab-pane label="全部" name="all" />
       <el-tab-pane :label="`未读 (${unreadCount})`" name="unread" />
     </el-tabs>
@@ -49,8 +49,8 @@ const activeTab = ref('all')
 const notifications = ref<NotificationItem[]>([])
 const unreadCount = ref(0)
 
-async function load() {
-  loading.value = true
+async function load(showLoading = true) {
+  if (showLoading) loading.value = true
   try {
     const [list, count] = await Promise.all([
       fetchNotifications({ unread: activeTab.value === 'unread' }),
@@ -58,7 +58,7 @@ async function load() {
     ])
     notifications.value = list.results
     unreadCount.value = count
-  } finally { loading.value = false }
+  } finally { if (showLoading) loading.value = false }
 }
 
 async function markRead(id: number) {
@@ -91,7 +91,7 @@ function formatTime(iso: string) {
 onMounted(() => load())
 useRealtimeEvent((event) => {
   if (event.type === 'notification.created' || event.type === 'notification.read') {
-    load()
+    load(false)
   }
 })
 </script>

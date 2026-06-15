@@ -6,7 +6,7 @@
       <el-button type="primary" @click="$router.push('/posts/create')">发布动态</el-button>
     </div>
 
-    <el-radio-group v-model="activeCategory" class="category-filter" @change="loadPosts">
+    <el-radio-group v-model="activeCategory" class="category-filter" @change="loadPosts()">
       <el-radio-button value="">全部</el-radio-button>
       <el-radio-button v-for="cat in POST_CATEGORIES" :key="cat.value" :value="cat.value">{{ cat.label }}</el-radio-button>
     </el-radio-group>
@@ -18,7 +18,7 @@
       type="success"
       show-icon
       :closable="false"
-      @click="refreshNewPosts"
+      @click="refreshNewPosts()"
     />
 
     <div v-loading="loading">
@@ -69,8 +69,8 @@ const pageSize = 20
 const activeCategory = ref('')
 const pendingNewPostCount = ref(0)
 
-async function loadPosts() {
-  loading.value = true
+async function loadPosts(showLoading = true) {
+  if (showLoading) loading.value = true
   try {
     const resp = await fetchPosts({
       category: activeCategory.value || undefined,
@@ -80,7 +80,7 @@ async function loadPosts() {
     posts.value = resp.results
     total.value = resp.count
   } finally {
-    loading.value = false
+    if (showLoading) loading.value = false
   }
 }
 
@@ -90,10 +90,10 @@ function loadPage(page: number) {
   loadPosts()
 }
 
-function refreshNewPosts() {
+function refreshNewPosts(showLoading = true) {
   pendingNewPostCount.value = 0
   currentPage.value = 1
-  loadPosts()
+  loadPosts(showLoading)
 }
 
 function isCurrentUserPostEvent(payload: Record<string, unknown>) {
@@ -112,14 +112,14 @@ onMounted(() => loadPosts())
 useRealtimeEvent((event) => {
   if (event.type === 'post.created') {
     if (isCurrentUserPostEvent(event.payload)) {
-      refreshNewPosts()
+      refreshNewPosts(false)
       return
     }
     pendingNewPostCount.value += 1
     return
   }
   if (event.type === 'post.updated' || event.type === 'comment.created') {
-    loadPosts()
+    loadPosts(false)
   }
 })
 </script>

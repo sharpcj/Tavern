@@ -134,15 +134,15 @@ const saving = ref(false)
 const isAuthor = ref(false)
 const replyPlaceholder = computed(() => (replyTargetName.value ? `回复 ${replyTargetName.value}...` : '回复...'))
 
-async function load() {
-  loading.value = true
+async function load(showLoading = true) {
+  if (showLoading) loading.value = true
   try {
     const id = Number(route.params.id)
     post.value = await fetchPostDetail(id)
     isAuthor.value = post.value.author_id === authStore.currentUser?.account_id
     comments.value = await fetchComments(id)
   } finally {
-    loading.value = false
+    if (showLoading) loading.value = false
   }
 }
 
@@ -227,10 +227,10 @@ onMounted(() => load())
 useRealtimeEvent((event) => {
   const currentPostId = Number(route.params.id)
   if (event.type === 'post.updated' && Number(event.target_id) === currentPostId) {
-    load()
+    load(false)
   }
   if (event.type === 'comment.created' && Number(event.payload.post_id) === currentPostId) {
-    load()
+    load(false)
   }
 })
 </script>

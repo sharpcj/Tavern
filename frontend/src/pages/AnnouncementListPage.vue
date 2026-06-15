@@ -41,14 +41,14 @@ const total = ref(0)
 const currentPage = ref(1)
 const pageSize = 20
 
-async function load() {
-  loading.value = true
+async function load(showLoading = true) {
+  if (showLoading) loading.value = true
   try {
     const resp = await fetchAnnouncements({ page: currentPage.value, page_size: pageSize })
     announcements.value = resp.results
     total.value = resp.count
   } finally {
-    loading.value = false
+    if (showLoading) loading.value = false
   }
 }
 
@@ -65,7 +65,7 @@ onMounted(() => load())
 useRealtimeEvent((event) => {
   if (event.type === 'announcement.created') {
     currentPage.value = 1
-    load()
+    load(false)
   }
 })
 </script>

@@ -62,10 +62,10 @@ const uploadForm = reactive({ caption: '', display_mode: 'real_name' })
 
 const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp'])
 
-async function load() {
-  loading.value = true
+async function load(showLoading = true) {
+  if (showLoading) loading.value = true
   try { album.value = await fetchAlbumDetail(Number(route.params.id)) }
-  finally { loading.value = false }
+  finally { if (showLoading) loading.value = false }
 }
 
 function onFileChange(event: Event) {
@@ -105,7 +105,7 @@ async function submitUpload() {
 onMounted(() => load())
 useRealtimeEvent((event) => {
   if (event.type === 'album.photo.created' && Number(event.payload.album_id) === Number(route.params.id)) {
-    load()
+    load(false)
   }
 })
 </script>

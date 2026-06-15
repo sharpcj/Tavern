@@ -143,14 +143,14 @@ const photoPositionText = computed(() => {
 
 const replyPlaceholder = computed(() => (replyTargetName.value ? `回复 ${replyTargetName.value}...` : '回复...'))
 
-async function load() {
-  loading.value = true
+async function load(showLoading = true) {
+  if (showLoading) loading.value = true
   try {
     const detail = await fetchPhotoDetail(Number(route.params.id))
     photo.value = detail
     const album = await fetchAlbumDetail(detail.album)
     albumPhotos.value = album.photos
-  } finally { loading.value = false }
+  } finally { if (showLoading) loading.value = false }
 }
 
 function goToPhoto(photoId?: number) {
@@ -214,10 +214,10 @@ watch(() => route.params.id, () => load())
 useRealtimeEvent((event) => {
   const currentPhotoId = Number(route.params.id)
   if (event.type === 'photo.comment.created' && Number(event.payload.photo_id) === currentPhotoId) {
-    load()
+    load(false)
   }
   if (event.type === 'album.photo.created' && photo.value && Number(event.payload.album_id) === photo.value.album) {
-    load()
+    load(false)
   }
 })
 </script>
