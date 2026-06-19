@@ -1,7 +1,7 @@
 <template>
   <el-container class="app-shell">
     <el-header class="app-header">
-      <div class="app-title" @click="$router.push('/')">Tavern 同学社区</div>
+      <div class="app-title" @click="$router.push('/home')">Tavern 同学社区</div>
       <div class="app-nav desktop-nav">
         <template v-if="authStore.isAuthenticated && authStore.isReviewApproved">
           <el-button text @click="$router.push('/activities')">活动</el-button>

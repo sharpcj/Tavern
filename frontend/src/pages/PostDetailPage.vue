@@ -215,7 +215,7 @@ async function doDelete() {
     await ElMessageBox.confirm('确定删除这条动态？', '确认', { type: 'warning' })
     await deletePost(post.value!.id)
     ElMessage.success('已删除')
-    router.push('/')
+    router.push('/home')
   } catch { /* cancelled */ }
 }
 

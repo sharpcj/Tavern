@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import SplashPage from '@/pages/SplashPage.vue'
 import ClassmateDetailPage from '@/pages/ClassmateDetailPage.vue'
 import ClassmateListPage from '@/pages/ClassmateListPage.vue'
 import CommunityConventionPage from '@/pages/CommunityConventionPage.vue'
@@ -50,7 +51,8 @@ const router = createRouter({
       path: '/',
       component: DefaultLayout,
       children: [
-        { path: '', name: 'home', component: PostListPage, meta: { requiresAuth: true, requiresApproved: true } },
+        { path: '', name: 'splash', component: SplashPage, meta: { requiresAuth: false } },
+        { path: 'home', name: 'home', component: PostListPage, meta: { requiresAuth: true, requiresApproved: true } },
         { path: 'register', name: 'register', component: RegisterPage, meta: { requiresAuth: false, guestOnly: true } },
         { path: 'community-convention', name: 'community-convention', component: CommunityConventionPage, meta: { requiresAuth: false } },
         { path: 'login', name: 'login', component: LoginPage, meta: { requiresAuth: false, guestOnly: true } },

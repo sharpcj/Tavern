@@ -41,9 +41,9 @@ async function submit() {
   try {
     await authStore.login(form.email, form.password)
     if (authStore.isReviewApproved && authStore.isAccountNormal) {
-      const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+      const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/home'
       if (redirect === '/login' || redirect === '/register') {
-        router.push('/')
+        router.push('/home')
       } else {
         router.push(redirect)
       }

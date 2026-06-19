@@ -92,7 +92,7 @@ async function submit() {
   try {
     await createPost({ ...form, uploaded_images: selectedFiles.value })
     ElMessage.success('发布成功')
-    router.push('/')
+    router.push('/home')
   } catch {
     ElMessage.error('发布失败，请确认图片格式正确且单张不超过 10 MB')
   } finally {

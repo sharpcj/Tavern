@@ -11,12 +11,12 @@
         <el-menu-item index="/admin/audit-logs">操作日志</el-menu-item>
       </el-menu>
       <div class="admin-back">
-        <el-button text @click="$router.push('/')">← 返回前台</el-button>
+        <el-button text @click="$router.push('/home')">← 返回前台</el-button>
       </div>
     </el-aside>
     <el-container class="admin-content-container">
       <div class="mobile-admin-nav">
-        <el-button text @click="$router.push('/')">← 前台</el-button>
+        <el-button text @click="$router.push('/home')">← 前台</el-button>
         <el-button text @click="$router.push('/admin/users')">用户</el-button>
         <el-button text @click="$router.push('/admin/users/review')">审核</el-button>
         <el-button text @click="$router.push('/admin/contents')">内容</el-button>
